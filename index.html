@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Watch</title>
+<style>
+  :root { --bg: #fff; --fg: #0f0f0f; --muted: #606060; --field: #f2f2f2; --line: #e5e5e5; --chip: #0000000d; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f0f0f; --fg: #f1f1f1; --muted: #aaa; --field: #272727; --line: #3f3f3f; --chip: #ffffff1a; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 14px/1.35 Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+         padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+  button { font: inherit; color: inherit; }
+  svg { display: block; fill: currentColor; }
+
+  /* Top bar */
+  header { position: sticky; top: 0; z-index: 3; background: var(--bg); height: 48px;
+           display: flex; align-items: center; padding: 0 4px 0 12px; }
+  .logo { font-weight: 700; font-size: 20px; letter-spacing: -0.5px; cursor: pointer; flex: none; }
+  .spacer { flex: 1; }
+  .icon { border: 0; background: none; width: 40px; height: 40px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+  .icon svg { width: 24px; height: 24px; }
+  .icon:active { background: var(--chip); }
+  header.searching { padding: 0 8px 0 4px; gap: 4px; }
+  header.searching .logo, header.searching .spacer, header.searching #openSearch { display: none; }
+  #searchBar { display: none; flex: 1; min-width: 0; align-items: center; }
+  header.searching #searchBar { display: flex; }
+  #form { flex: 1; display: flex; min-width: 0; position: relative; }
+  #q { flex: 1; min-width: 0; border: 0; border-radius: 20px; padding: 8px 36px 8px 16px; height: 36px;
+       background: var(--field); color: var(--fg); font-size: 16px; outline: none; -webkit-appearance: none; }
+  #q::-webkit-search-cancel-button { display: none; }
+  #clear { position: absolute; right: 0; top: -2px; }
+  #clear svg { width: 20px; height: 20px; }
+  .mic { background: var(--field); margin-left: 8px; }
+  .mic.live { background: #f00; color: #fff; }
+
+  /* Home splash */
+  .splash { display: flex; flex-direction: column; align-items: center; padding: 120px 16px 40px; gap: 28px; }
+  .splash .big { font-weight: 700; font-size: 40px; letter-spacing: -1px; }
+  .pill { width: 100%; max-width: 560px; display: flex; align-items: center; gap: 8px; }
+  .pill .icon { background: var(--field); width: 48px; height: 48px; }
+  .pill .field { flex: 1; height: 48px; border-radius: 24px; background: var(--field); border: 0;
+                 text-align: left; padding: 0 20px; color: var(--muted); font-size: 16px; cursor: text; }
+
+  /* Results */
+  main { max-width: 1100px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0 16px; }
+  .card { cursor: pointer; padding-bottom: 20px; }
+  .tw { position: relative; }
+  .thumb { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: var(--field); }
+  .dur { position: absolute; right: 8px; bottom: 8px; background: #000c; color: #fff; font-size: 12px;
+         font-weight: 500; padding: 1px 4px; border-radius: 4px; }
+  @media (min-width: 640px) { .thumb { border-radius: 12px; } .grid { padding: 12px; } }
+  .meta { display: flex; gap: 12px; padding: 12px 12px 0; }
+  .av { width: 36px; height: 36px; border-radius: 50%; flex: none; background: var(--field); object-fit: cover; }
+  .txt { min-width: 0; flex: 1; }
+  .title { font-weight: 500; font-size: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2;
+           -webkit-box-orient: vertical; overflow: hidden; }
+  .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .note { color: var(--muted); text-align: center; padding: 48px 16px; }
+  .more { display: block; margin: 0 auto 32px; border: 1px solid var(--line); background: none;
+          border-radius: 18px; padding: 8px 18px; font-size: 14px; cursor: pointer; }
+
+  /* Watch */
+  .player { aspect-ratio: 16 / 9; width: 100%; background: #000; }
+  .player iframe { width: 100%; height: 100%; border: 0; display: block; }
+  @media (max-width: 639px) { .watch { position: sticky; top: 48px; z-index: 2; background: var(--bg); } }
+  .wmeta { padding: 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  .wmeta .title { font-size: 18px; font-weight: 700; -webkit-line-clamp: 3; }
+  .chan { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-weight: 500; font-size: 15px; }
+
+  /* Subscriptions */
+  .chans { display: flex; gap: 12px; overflow-x: auto; padding: 8px 12px 12px; border-bottom: 1px solid var(--line);
+           margin-bottom: 12px; scrollbar-width: none; }
+  .chans::-webkit-scrollbar { display: none; }
+  .chan-btn { border: 0; background: none; width: 64px; flex: none; padding: 0; cursor: pointer;
+              display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .chan-btn img { width: 56px; height: 56px; border-radius: 50%; background: var(--field); object-fit: cover;
+                  border: 2px solid transparent; }
+  .chan-btn span { width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  .chan-btn.on img { border-color: var(--fg); }
+  .chan-btn.on span { color: var(--fg); font-weight: 500; }
+
+  /* You */
+  .you { padding: 16px 0; }
+  .me { display: flex; align-items: center; gap: 16px; padding: 8px 16px 20px; font-size: 24px; font-weight: 700; }
+  .me .ring { width: 64px; height: 64px; border-radius: 50%; background: var(--field);
+              display: flex; align-items: center; justify-content: center; }
+  .me .ring svg { width: 36px; height: 36px; }
+  .row-btn { display: flex; align-items: center; gap: 24px; width: 100%; border: 0; background: none;
+             padding: 14px 16px; font-size: 15px; text-align: left; cursor: pointer; }
+  .row-btn svg { width: 24px; height: 24px; }
+  .add { max-width: 480px; margin: 0 auto; padding: 16px 12px 32px; }
+  .add p { color: var(--muted); font-size: 13px; }
+  .add input { width: 100%; margin: 8px 0; border: 0; border-radius: 20px; padding: 9px 16px;
+               background: var(--field); color: var(--fg); font-size: 16px; outline: none; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { border: 0; background: var(--field); border-radius: 18px; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+
+  /* Bottom bar */
+  nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; background: var(--bg);
+        border-top: 1px solid var(--line); display: flex; justify-content: space-around;
+        padding-bottom: env(safe-area-inset-bottom); }
+  nav button { flex: 1; max-width: 160px; border: 0; background: none; height: 56px; cursor: pointer;
+               display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; }
+  nav svg { width: 24px; height: 24px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="M20.87 20.17l-5.59-5.59A7.43 7.43 0 0 0 17 10a7 7 0 1 0-7 7 7.43 7.43 0 0 0 4.58-1.72l5.59 5.59zM5 10a5 5 0 1 1 5 5 5 5 0 0 1-5-5z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M21 11H6.83l5.59-5.59L11 4l-8 8 8 8 1.41-1.41L6.83 13H21z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 21V10.08l8-6.96 8 6.96V21h-6v-6h-4v6H4z"/></symbol>
+  <symbol id="i-home-o" viewBox="0 0 24 24"><path d="M12 4.33l7 6.12V20h-4v-6H9v6H5v-9.55l7-6.12M12 3l-9 7.86V21h7v-6h4v6h7V10.86L12 3z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></symbol>
+  <symbol id="i-subs"viewBox="0 0 24 24"><path d="M20 7H4V6h16v1zm2 2v12H2V9h20zm-7 6-5-3v6l5-3zm2-12H7v1h10V3z"/></symbol>
+  <symbol id="i-subs-o" viewBox="0 0 24 24"><path d="M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 10h18v10H3V10z"/></symbol>
+  <symbol id="i-you"viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
+  <symbol id="i-block" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2a8 8 0 0 1 6.32 12.9L7.1 5.68A7.95 7.95 0 0 1 12 4zm0 16a8 8 0 0 1-6.32-12.9L16.9 18.32A7.95 7.95 0 0 1 12 20z"/></symbol>
+</svg>
+
+<header id="header">
+  <div class="logo" id="logo" aria-label="Home">Watch</div>
+  <div class="spacer"></div>
+  <button class="icon" id="openSearch" aria-label="Search"><svg><use href="#i-search"/></svg></button>
+  <div id="searchBar">
+    <button class="icon" id="closeSearch" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+    <form id="form" autocomplete="off">
+      <input id="q" type="search" placeholder="Search" enterkeyhint="search">
+      <button class="icon" id="clear" type="button" aria-label="Clear"><svg><use href="#i-x"/></svg></button>
+    </form>
+    <button class="icon mic" id="mic" aria-label="Search with your voice"><svg><use href="#i-mic"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <section class="splash" id="splash">
+    <div class="big">Watch</div>
+    <div class="pill">
+      <button class="field" id="splashField">Search</button>
+      <button class="icon" id="splashMic" aria-label="Search with your voice"><svg><use href="#i-mic"/></svg></button>
+    </div>
+  </section>
+
+  <section class="watch" id="watch" hidden>
+    <div class="player" id="player"></div>
+  </section>
+  <div class="wmeta" id="wmeta" hidden>
+    <div class="title" id="wtitle"></div>
+    <div class="sub" id="wsub"></div>
+    <div class="chan"><img class="av" id="wav" alt=""><span id="wchan"></span></div>
+  </div>
+
+  <section id="list" hidden>
+    <div class="grid" id="grid"></div>
+    <p class="note" id="note" hidden></p>
+    <button class="more" id="more" hidden>Show more</button>
+  </section>
+
+  <section id="subs" hidden>
+    <div class="chans" id="chans"></div>
+    <div class="grid" id="sgrid"></div>
+    <p class="note" id="snote" hidden></p>
+  </section>
+
+  <section class="you" id="you" hidden>
+    <div class="me"><div class="ring"><svg><use href="#i-you"/></svg></div><span>You</span></div>
+    <button class="row-btn" id="openAdd" hidden><svg><use href="#i-block"/></svg>Blocked words</button>
+  </section>
+
+  <section class="add" id="add" hidden>
+    <p>Type a word or phrase and tap Add. It is scrambled as soon as it is saved: nothing here can show it or take it back off.</p>
+    <input id="word" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Word or phrase">
+    <div class="row">
+      <button class="chip" id="addBtn">Add</button>
+      <button class="chip" id="lockBtn">Done, lock it</button>
+      <button class="chip" id="closeAdd">Close</button>
+    </div>
+    <p id="addNote"></p>
+  </section>
+</main>
+
+<nav>
+  <button id="navHome"><svg><use id="homeIcon" href="#i-home"/></svg>Home</button>
+  <button id="navSubs"><svg><use id="subsIcon" href="#i-subs-o"/></svg>Subscriptions</button>
+  <button id="navYou"><svg><use href="#i-you"/></svg>You</button>
+</nav>
+
+<script>
+  // The Apps Script web app does the searching. The key arrives once in the link's
+  // #k= part, is kept in this browser only, and is wiped from the address bar.
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyTizUsfvWZVEwJzpxszKyO-2kaz5ss06j5Qy1NEUGsrfIQLHero9IPY4X4GEfuAuml/exec';
+  var KEY = (function () {
+    var m = /[#&]k=([\w-]+)/.exec(location.hash);
+    try {
+      if (m) localStorage.setItem('k', m[1]);
+      return m ? m[1] : localStorage.getItem('k') || '';
+    } catch (e) {
+      return m ? m[1] : '';
+    } finally {
+      if (m) history.replaceState(null, '', location.pathname + location.search);
+    }
+  })();
+
+  // Same shape as google.script.run: api().withSuccessHandler(f).withFailureHandler(g).fnName(args).
+  function api() {
+    var ok = function () {}, fail = function () {};
+    var p = new Proxy({}, {
+      get: function (_, name) {
+        if (name === 'withSuccessHandler') return function (f) { ok = f; return p; };
+        if (name === 'withFailureHandler') return function (f) { fail = f; return p; };
+        return function () {
+          fetch(API_URL, { method: 'POST', body: JSON.stringify({ k: KEY, fn: name, args: [].slice.call(arguments) }) })
+            .then(function (r) { return r.json(); })
+            .then(function (d) { if (d.error) throw new Error(d.error); ok(d.result); })
+            .catch(fail);
+        };
+      }
+    });
+    return p;
+  }
+
+  var query = '';
+  var next = null;
+  var busy = false;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function decode(s) {
+    var t = document.createElement('textarea');
+    t.innerHTML = s;
+    return t.value;
+  }
+
+  function ago(iso) {
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    var units = [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]];
+    for (var i = 0; i < units.length; i++) {
+      var n = Math.floor(s / units[i][1]);
+      if (n >= 1) return n + ' ' + units[i][0] + (n > 1 ? 's' : '') + ' ago';
+    }
+    return 'just now';
+  }
+
+  function views(n) {
+    if (!n) return '';
+    var steps = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+    for (var i = 0; i < steps.length; i++) {
+      if (n >= steps[i][0]) {
+        var v = n / steps[i][0];
+        return (v < 10 ? Math.floor(v * 10) / 10 : Math.floor(v)) + steps[i][1] + ' views';
+      }
+    }
+    return n + (n === 1 ? ' view' : ' views');
+  }
+
+  function clock(s) {
+    if (!s) return '';
+    var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+    var pad = function (x) { return (x < 10 ? '0' : '') + x; };
+    return h ? h + ':' + pad(m) + ':' + pad(sec) : m + ':' + pad(sec);
+  }
+
+  // One view at a time: home, results, subs, watch (player above the list it came from), you, add.
+  var current = 'home';
+  var from = 'results';
+  function show(view) {
+    current = view;
+    if (view === 'results' || view === 'subs') from = view;
+    if (view !== 'watch') $('player').innerHTML = '';
+    $('splash').hidden = view !== 'home';
+    $('list').hidden = !(view === 'results' || (view === 'watch' && from === 'results'));
+    $('subs').hidden = !(view === 'subs' || (view === 'watch' && from === 'subs'));
+    $('watch').hidden = $('wmeta').hidden = view !== 'watch';
+    $('you').hidden = view !== 'you';
+    $('add').hidden = view !== 'add';
+    var onSubs = view === 'subs' || (view === 'watch' && from === 'subs');
+    var onHome = !onSubs && view !== 'you' && view !== 'add';
+    $('homeIcon').setAttribute('href', onHome ? '#i-home' : '#i-home-o');
+    $('subsIcon').setAttribute('href', onSubs ? '#i-subs' : '#i-subs-o');
+    searching(view === 'results' && !!query);
+    window.scrollTo(0, 0);
+  }
+
+  function searching(on) {
+    $('header').classList.toggle('searching', on);
+  }
+
+  function openSearch() {
+    searching(true);
+    $('q').focus();
+  }
+
+  function goHome() {
+    query = '';
+    $('q').value = '';
+    $('grid').innerHTML = '';
+    $('more').hidden = true;
+    note('');
+    show('home');
+  }
+
+  function note(text) {
+    $('note').textContent = text;
+    $('note').hidden = !text;
+  }
+
+  function run(fresh) {
+    if (busy || !query) return;
+    busy = true;
+    if (fresh) { $('grid').innerHTML = ''; next = null; }
+    $('more').hidden = true;
+    note('Loading…');
+    api()
+      .withSuccessHandler(function (res) {
+        busy = false;
+        res.items.forEach(function (v) { addCard(v, 'grid'); });
+        next = res.next;
+        $('more').hidden = !next;
+        note($('grid').children.length ? '' : 'No results found.');
+      })
+      .withFailureHandler(function () {
+        busy = false;
+        note('Something went wrong. Try again.');
+      })
+      .search(query, fresh ? null : next);
+  }
+
+  function addCard(v, gridId) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    var tw = document.createElement('div');
+    tw.className = 'tw';
+    var img = document.createElement('img');
+    img.className = 'thumb';
+    img.loading = 'lazy';
+    img.src = v.thumb;
+    tw.appendChild(img);
+    if (v.seconds) {
+      var dur = document.createElement('span');
+      dur.className = 'dur';
+      dur.textContent = clock(v.seconds);
+      tw.appendChild(dur);
+    }
+    var meta = document.createElement('div');
+    meta.className = 'meta';
+    var av = document.createElement('img');
+    av.className = 'av';
+    av.alt = '';
+    if (v.avatar) av.src = v.avatar;
+    var txt = document.createElement('div');
+    txt.className = 'txt';
+    var title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = decode(v.title);
+    var sub = document.createElement('div');
+    sub.className = 'sub';
+    var channel = decode(v.channel);
+    sub.textContent = [channel, views(v.views), ago(v.published)].filter(Boolean).join(' · ');
+    txt.appendChild(title);
+    txt.appendChild(sub);
+    meta.appendChild(av);
+    meta.appendChild(txt);
+    card.appendChild(tw);
+    card.appendChild(meta);
+    card.onclick = function () { play(v, title.textContent, channel); };
+    $(gridId).appendChild(card);
+  }
+
+  // Subscriptions: channel row on top, newest uploads below; tap a channel to see only its videos.
+  var chanList = null;
+  var chanPick = null;
+  function snote(text) {
+    $('snote').textContent = text;
+    $('snote').hidden = !text;
+  }
+
+  function openSubs() {
+    show('subs');
+    if (!chanList) {
+      snote('Loading…');
+      api()
+        .withSuccessHandler(function (list) {
+          chanList = list;
+          drawChans();
+          loadFeed();
+        })
+        .withFailureHandler(function () { snote('Something went wrong. Try again.'); })
+        .subscriptionList();
+    }
+  }
+
+  function drawChans() {
+    $('chans').innerHTML = '';
+    chanList.forEach(function (c) {
+      var b = document.createElement('button');
+      b.className = 'chan-btn' + (c.id === chanPick ? ' on' : '');
+      var img = document.createElement('img');
+      img.alt = '';
+      if (c.thumb) img.src = c.thumb;
+      var name = document.createElement('span');
+      name.textContent = c.title;
+      b.appendChild(img);
+      b.appendChild(name);
+      b.onclick = function () {
+        chanPick = chanPick === c.id ? null : c.id;
+        drawChans();
+        loadFeed();
+      };
+      $('chans').appendChild(b);
+    });
+  }
+
+  function loadFeed() {
+    $('sgrid').innerHTML = '';
+    if (!chanList.length) { snote('No subscriptions yet.'); return; }
+    snote('Loading…');
+    var want = chanPick;
+    api()
+      .withSuccessHandler(function (res) {
+        if (want !== chanPick) return;
+        res.items.forEach(function (v) { addCard(v, 'sgrid'); });
+        snote(res.items.length ? '' : 'No videos.');
+      })
+      .withFailureHandler(function () { snote('Something went wrong. Try again.'); })
+      .subscriptionFeed(want);
+  }
+
+  // Talk to text: the browser's speech recognition, searching as soon as you stop talking.
+  // Where there is none, the mic opens the keyboard and its own dictation key listens.
+  var Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var listening = null;
+  function keyboardMic() {
+    $('q').placeholder = 'Tap the mic on your keyboard';
+    $('q').focus();
+  }
+  function talk() {
+    searching(true);
+    $('q').value = '';
+    if (!Speech) { keyboardMic(); return; }
+    if (listening) { listening.stop(); return; }
+    var r = new Speech();
+    r.lang = navigator.language || 'en-US';
+    r.interimResults = true;
+    listening = r;
+    $('mic').classList.add('live');
+    $('q').placeholder = 'Listening…';
+    r.onresult = function (e) {
+      var text = '';
+      for (var i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+      $('q').value = text;
+      if (e.results[e.results.length - 1].isFinal) r.stop();
+    };
+    r.onerror = function (e) { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') Speech = null; };
+    r.onend = function () {
+      listening = null;
+      $('mic').classList.remove('live');
+      $('q').placeholder = 'Search';
+      if ($('q').value.trim()) $('form').requestSubmit();
+    };
+    try { r.start(); } catch (e) { r.onend(); keyboardMic(); }
+  }
+  $('q').onblur = function () { if (!listening) $('q').placeholder = 'Search'; };
+
+  function play(v, title, channel) {
+    api()
+      .withSuccessHandler(function (ok) {
+        if (!ok) return;
+        show('watch');
+        $('wtitle').textContent = title;
+        $('wsub').textContent = [views(v.views), ago(v.published)].filter(Boolean).join('  ');
+        $('wchan').textContent = channel;
+        if (v.avatar) $('wav').src = v.avatar; else $('wav').removeAttribute('src');
+        $('player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + v.id +
+          '?playsinline=1&rel=0&autoplay=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+      })
+      .canPlay(v.id);
+  }
+
+  $('form').onsubmit = function (e) {
+    e.preventDefault();
+    var q = $('q').value.trim();
+    if (!q) return;
+    query = q;
+    $('q').blur();
+    show('results');
+    run(true);
+  };
+  $('openSearch').onclick = openSearch;
+  $('splashField').onclick = openSearch;
+  $('clear').onclick = function () { $('q').value = ''; $('q').focus(); };
+  $('closeSearch').onclick = function () {
+    $('q').blur();
+    if (current === 'results') goHome();
+    else { $('q').value = query; searching(false); }
+  };
+  $('logo').onclick = goHome;
+  $('navHome').onclick = goHome;
+  $('navYou').onclick = function () { show('you'); };
+  $('navSubs').onclick = function () {
+    if (current === 'subs' && chanList) { chanPick = null; drawChans(); loadFeed(); }
+    else openSubs();
+  };
+  $('mic').onclick = talk;
+  $('splashMic').onclick = talk;
+  $('more').onclick = function () { run(false); };
+
+  function showAdd(on) {
+    show(on ? 'add' : 'you');
+    $('addNote').textContent = '';
+    $('word').value = '';
+  }
+
+  var lockArmed = false;
+  $('openAdd').onclick = function () { showAdd(true); };
+  $('closeAdd').onclick = function () { showAdd(false); };
+  $('addBtn').onclick = function () {
+    var text = $('word').value;
+    $('word').value = '';
+    if (!text.trim()) return;
+    api()
+      .withSuccessHandler(function (res) {
+        if (!res.ok) { $('addNote').textContent = 'Adding is closed.'; $('openAdd').hidden = true; return; }
+        $('addNote').textContent = res.added ? 'Added.' : 'Already on the list.';
+      })
+      .addWords(text);
+  };
+  $('lockBtn').onclick = function () {
+    if (!lockArmed) {
+      lockArmed = true;
+      $('lockBtn').textContent = 'Tap again: this is for good';
+      return;
+    }
+    api().withSuccessHandler(function () {
+      $('openAdd').hidden = true;
+      showAdd(false);
+    }).lockAdding();
+  };
+  if (!KEY) {
+    $('splash').innerHTML = '<p class="note">Open this from your shortcut.</p>';
+    document.querySelector('nav').hidden = true;
+  } else {
+    api().withSuccessHandler(function (open) { $('openAdd').hidden = !open; }).canAdd();
+  }
+</script>
+</body>
+</html>
