@@ -194,8 +194,8 @@
 </nav>
 
 <script>
-  // The Apps Script web app does the searching. The key arrives once in the link's
-  // #k= part, is kept in this browser only, and is wiped from the address bar.
+  // The Apps Script web app does the searching. The key rides in the link's #k= part
+  // and stays in the address bar, so a home-screen icon saved from the browser keeps it.
   var API_URL = 'https://script.google.com/macros/s/AKfycbyTizUsfvWZVEwJzpxszKyO-2kaz5ss06j5Qy1NEUGsrfIQLHero9IPY4X4GEfuAuml/exec';
   var KEY = (function () {
     var m = /[#&]k=([\w-]+)/.exec(location.hash);
@@ -204,8 +204,6 @@
       return m ? m[1] : localStorage.getItem('k') || '';
     } catch (e) {
       return m ? m[1] : '';
-    } finally {
-      if (m) history.replaceState(null, '', location.pathname + location.search);
     }
   })();
 
