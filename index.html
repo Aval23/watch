@@ -180,6 +180,15 @@
   .row-btn { display: flex; align-items: center; gap: 24px; width: 100%; border: 0; background: none;
              padding: 14px 16px; font-size: 15px; text-align: left; cursor: pointer; }
   .row-btn svg { width: 24px; height: 24px; }
+  .you h2 { font-size: 20px; margin: 16px 12px 4px; }
+  .hrow { display: flex; gap: 12px; overflow-x: auto; padding: 8px 12px; scrollbar-width: none; align-items: flex-start; }
+  .hrow::-webkit-scrollbar { display: none; }
+  .hrow .card { width: 168px; flex: none; padding-bottom: 0; }
+  .hrow .thumb { border-radius: 8px; }
+  .hrow .count { border-radius: 0 8px 8px 0; }
+  .hrow .meta { padding: 8px 0 0; }
+  .hrow .title { font-size: 14px; }
+  .hrow .more { flex: none; align-self: center; margin: 0; }
   .add { max-width: 480px; margin: 0 auto; padding: 16px 12px 32px; }
   .add p { color: var(--muted); font-size: 13px; }
   .add input { width: 100%; margin: 8px 0; border: 0; border-radius: 20px; padding: 9px 16px;
@@ -309,6 +318,10 @@
     <div class="me"><div class="ring"><svg><use href="#i-you"/></svg></div><span>You</span></div>
     <button class="row-btn" id="openLater"><svg><use href="#i-later"/></svg>Watch later</button>
     <button class="row-btn" id="openAdd" hidden><svg><use href="#i-block"/></svg>Blocked words</button>
+    <div id="mine" hidden>
+      <h2>Playlists</h2>
+      <div class="hrow" id="mgrid"><button class="more" id="mmore" hidden>More</button></div>
+    </div>
   </section>
 
   <section class="add" id="add" hidden>
@@ -969,10 +982,9 @@
     card.className = 'card';
     var tw = document.createElement('div');
     tw.className = 'tw';
-    var img = document.createElement('img');
+    var img = document.createElement(p.thumb ? 'img' : 'div');
     img.className = 'thumb';
-    img.loading = 'lazy';
-    img.src = p.thumb;
+    if (p.thumb) { img.loading = 'lazy'; img.src = p.thumb; }
     var count = document.createElement('div');
     count.className = 'count';
     count.innerHTML = '<svg><use href="#i-list"/></svg>';
@@ -995,7 +1007,37 @@
     card.appendChild(tw);
     card.appendChild(meta);
     card.onclick = function () { openPlaylist(p); };
-    $(gridId).appendChild(card);
+    $(gridId).insertBefore(card, gridId === 'mgrid' ? $('mmore') : null);
+  }
+
+  // Your own playlists on the You tab, with Liked videos first. Loaded once.
+  var mine = { items: [], next: null, done: false };
+  function openYou() {
+    show('you');
+    if (mine.done) return;
+    if (!$('mgrid').querySelector('.card')) addList({ id: 'liked', title: 'Liked videos', thumb: '', count: '' }, 'mgrid');
+    $('mine').hidden = false;
+    loadMine();
+  }
+  function loadMine() {
+    if (mine.busy) return;
+    mine.busy = true;
+    $('mmore').hidden = true;
+    skeleton('mgrid', 2);
+    api()
+      .withSuccessHandler(function (res) {
+        mine.busy = false;
+        mine.done = true;
+        mine.next = res.next;
+        unskeleton('mgrid');
+        res.items.forEach(function (p) { addList(p, 'mgrid'); });
+        $('mmore').hidden = !res.next;
+      })
+      .withFailureHandler(function () {
+        mine.busy = false;
+        $('mine').hidden = true;
+      })
+      .myPlaylists(mine.next);
   }
 
   // Recent searches: kept on this phone only, and only searches that found something.
@@ -1059,7 +1101,8 @@
   };
   $('logo').onclick = goHome;
   $('navHome').onclick = goHome;
-  $('navYou').onclick = function () { show('you'); };
+  $('navYou').onclick = openYou;
+  $('mmore').onclick = loadMine;
   $('navSubs').onclick = function () {
     if (current === 'subs' && chanList) { chanPick = null; drawChans(); loadFeed(); }
     else openSubs();
@@ -1091,7 +1134,7 @@
     var seen = new IntersectionObserver(function (es) {
       es.forEach(function (e) { if (e.isIntersecting && !e.target.hidden) e.target.click(); });
     }, { rootMargin: '600px 0px' });
-    ['more', 'cmore', 'pmore'].forEach(function (id) { seen.observe($(id)); });
+    ['more', 'cmore', 'pmore', 'mmore'].forEach(function (id) { seen.observe($(id)); });
   }
   $('less').onclick = function () { toggleDesc(false); };
   $('hback').onclick = function () { history.back(); };
