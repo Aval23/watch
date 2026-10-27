@@ -82,6 +82,14 @@
   .meta { display: flex; gap: 12px; padding: 12px 12px 0; }
   .av { width: 36px; height: 36px; border-radius: 50%; flex: none; background: var(--field); object-fit: cover; }
   .txt { min-width: 0; flex: 1; }
+  .dots { width: 32px; height: 32px; margin: -4px -4px 0 0; color: var(--fg); }
+  .dots svg { width: 20px; height: 20px; }
+  .skel .dots { display: none; }
+
+  /* The ⋮ menu on a video */
+  #sheetBg { position: fixed; inset: 0; background: #0008; z-index: 7; }
+  #sheet { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 8;
+           background: var(--field); border-radius: 12px; padding: 8px 0; max-width: 480px; margin: 0 auto; }
   .title { font-weight: 500; font-size: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2;
            -webkit-box-orient: vertical; overflow: hidden; }
   .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
@@ -278,6 +286,7 @@
   <symbol id="i-fwd30" viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/><text x="12" y="16.5" font-size="7" text-anchor="middle" font-family="Arial" font-weight="700">30</text></symbol>
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></symbol>
   <symbol id="i-block" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2a8 8 0 0 1 6.32 12.9L7.1 5.68A7.95 7.95 0 0 1 12 4zm0 16a8 8 0 0 1-6.32-12.9L16.9 18.32A7.95 7.95 0 0 1 12 20z"/></symbol>
 </svg>
 
@@ -428,6 +437,12 @@
     <p id="addNote"></p>
   </section>
 </main>
+
+<div id="sheetBg" hidden></div>
+<div id="sheet" hidden>
+  <button class="row-btn" id="sheetLater"><svg><use href="#i-later"/></svg><span id="sheetLaterText">Save to Watch later</span></button>
+  <button class="row-btn" id="sheetShare"><svg><use href="#i-share"/></svg>Share</button>
+</div>
 
 <audio id="audio" preload="metadata"></audio>
 <div id="mini" hidden>
@@ -733,8 +748,14 @@
     sub.textContent = [channel, views(v.views), ago(v.published)].filter(Boolean).join(' · ');
     txt.appendChild(title);
     txt.appendChild(sub);
+    var dots = document.createElement('button');
+    dots.className = 'icon dots';
+    dots.setAttribute('aria-label', 'More');
+    dots.innerHTML = '<svg><use href="#i-dots"/></svg>';
+    dots.onclick = function (e) { e.stopPropagation(); openSheet(v); };
     meta.appendChild(av);
     meta.appendChild(txt);
+    meta.appendChild(dots);
     card.appendChild(tw);
     card.appendChild(meta);
     card.onclick = function () { play(v); };
@@ -1248,25 +1269,37 @@
   }
   $('less').onclick = function () { toggleDesc(false); };
   $('hback').onclick = function () { history.back(); };
-  $('shareBtn').onclick = function () {
-    if (!playing) return;
-    var url = 'https://youtu.be/' + playing.id;
+  function shareVideo(v) {
+    var url = 'https://youtu.be/' + v.id;
     if (navigator.share) {
-      navigator.share({ title: decode(playing.title), url: url }).catch(function () {});
+      navigator.share({ title: decode(v.title), url: url }).catch(function () {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(function () { toast('Link copied'); });
     }
-  };
-  $('saveBtn').onclick = function () {
-    if (!playing) return;
-    var on = isSaved(playing.id);
-    var list = getLater().filter(function (v) { return v.id !== playing.id; });
-    if (!on) list.unshift(playing);
+  }
+  function toggleLater(v) {
+    var on = isSaved(v.id);
+    var list = getLater().filter(function (x) { return x.id !== v.id; });
+    if (!on) list.unshift(v);
     setLater(list);
     drawSave();
     toast(on ? 'Removed from Watch later' : 'Saved to Watch later');
-    if (from === 'later') drawLater();
-  };
+    if (from === 'later' && (current === 'later' || current === 'watch')) drawLater();
+  }
+  $('shareBtn').onclick = function () { if (playing) shareVideo(playing); };
+  $('saveBtn').onclick = function () { if (playing) toggleLater(playing); };
+
+  // ⋮ on any video card: Watch later and Share, like the app's menu.
+  var sheetFor = null;
+  function openSheet(v) {
+    sheetFor = v;
+    $('sheetLaterText').textContent = isSaved(v.id) ? 'Remove from Watch later' : 'Save to Watch later';
+    $('sheet').hidden = $('sheetBg').hidden = false;
+  }
+  function closeSheet() { $('sheet').hidden = $('sheetBg').hidden = true; }
+  $('sheetBg').onclick = closeSheet;
+  $('sheetLater').onclick = function () { closeSheet(); toggleLater(sheetFor); };
+  $('sheetShare').onclick = function () { closeSheet(); shareVideo(sheetFor); };
   $('openLater').onclick = function () { drawLater(); show('later'); };
 
   // Listen: podcasts, read from each show's public feed. Feeds are published to be
@@ -1682,6 +1715,18 @@
     setSession();
     drawPlaying();
   })();
+
+  // iPhone bug: after the keyboard closes, the bottom tabs can stay stuck where the
+  // keyboard pushed them, halfway up the screen. Make the page lay them out again.
+  function reanchor() {
+    var nav = document.querySelector('nav');
+    nav.style.display = 'none';
+    void nav.offsetHeight;
+    nav.style.display = '';
+    window.scrollTo(window.scrollX, window.scrollY);
+  }
+  document.addEventListener('focusout', function () { setTimeout(reanchor, 300); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { setTimeout(reanchor, 300); });
 
   // The page itself is kept on the phone too, so downloads still open with no signal.
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
