@@ -181,6 +181,12 @@
              padding: 14px 16px; font-size: 15px; text-align: left; cursor: pointer; }
   .row-btn svg { width: 24px; height: 24px; }
   .you h2 { font-size: 20px; margin: 16px 12px 4px; }
+
+  /* Listen test: one podcast episode, to check play-while-locked */
+  .listen { max-width: 480px; margin: 0 auto; padding: 16px 12px 32px; display: flex; flex-direction: column; gap: 12px; }
+  .listen img { width: 100%; aspect-ratio: 1; border-radius: 12px; object-fit: cover; background: var(--field); }
+  .listen audio { width: 100%; }
+  .listen p { color: var(--muted); font-size: 13px; margin: 0; }
   .hrow { display: flex; gap: 12px; overflow-x: auto; padding: 8px 12px; scrollbar-width: none; align-items: flex-start; }
   .hrow::-webkit-scrollbar { display: none; }
   .hrow .card { width: 168px; flex: none; padding-bottom: 0; }
@@ -317,11 +323,19 @@
   <section class="you" id="you" hidden>
     <div class="me"><div class="ring"><svg><use href="#i-you"/></svg></div><span>You</span></div>
     <button class="row-btn" id="openLater"><svg><use href="#i-later"/></svg>Watch later</button>
+    <button class="row-btn" id="openListen"><svg><use href="#i-mic"/></svg>Listen test</button>
     <button class="row-btn" id="openAdd" hidden><svg><use href="#i-block"/></svg>Blocked words</button>
     <div id="mine" hidden>
       <h2>Playlists</h2>
       <div class="hrow" id="mgrid"><button class="more" id="mmore" hidden>More</button></div>
     </div>
+  </section>
+
+  <section class="listen" id="listen" hidden>
+    <img id="lcover" alt="">
+    <div><div class="title" id="ltitle"></div><div class="sub" id="lshow"></div></div>
+    <audio id="laudio" controls preload="none"></audio>
+    <p>Press play, then lock your phone or swipe to another app. It should keep playing, with controls on the lock screen.</p>
   </section>
 
   <section class="add" id="add" hidden>
@@ -460,13 +474,14 @@
     $('watch').hidden = $('wmeta').hidden = view !== 'watch';
     $('you').hidden = view !== 'you';
     $('add').hidden = view !== 'add';
+    $('listen').hidden = view !== 'listen';
     var onSubs = view === 'subs' || (view === 'watch' && from === 'subs');
-    var onYou = view === 'you' || view === 'add' || view === 'later' || (view === 'watch' && from === 'later');
+    var onYou = view === 'you' || view === 'add' || view === 'later' || view === 'listen' || (view === 'watch' && from === 'later');
     $('homeIcon').setAttribute('href', !onSubs && !onYou ? '#i-home' : '#i-home-o');
     $('subsIcon').setAttribute('href', onSubs ? '#i-subs' : '#i-subs-o');
     searching(view === 'results' && !!query);
     if (!opts.pop) record(view, opts.v);
-    $('hback').hidden = !(depth > 0 && /^(watch|later|add|channel|playlist)$/.test(view));
+    $('hback').hidden = !(depth > 0 && /^(watch|later|add|channel|playlist|listen)$/.test(view));
     window.scrollTo(0, 0);
   }
 
@@ -1158,6 +1173,40 @@
     if (from === 'later') drawLater();
   };
   $('openLater').onclick = function () { drawLater(); show('later'); };
+
+  // Listen test: a podcast feed's own audio file, which is published to be
+  // downloaded and played in the background. One fixed episode for now.
+  var EPISODE = {
+    title: 'The Spirit of Eternal Life in John',
+    show: 'BibleProject',
+    cover: 'https://image.simplecastcdn.com/images/f0e3e0b5-a1ce-42eb-b6b9-514235b6a2b8/3fdf3739-f770-4d7e-b64d-6750407ef541/3000x3000/podcast-cover.jpg?aid=rss_feed',
+    audio: 'https://afp-597195-injected.calisto.simplecastaudio.com/695767b0-cd40-4e6c-ac8c-ac6bc0df77ee/episodes/b33ce6bc-1104-4234-b598-83e18231e98b/audio/128/default.mp3?aid=rss_feed&awCollectionId=695767b0-cd40-4e6c-ac8c-ac6bc0df77ee&awEpisodeId=b33ce6bc-1104-4234-b598-83e18231e98b&feed=3NVmUWZO'
+  };
+  $('openListen').onclick = function () {
+    var a = $('laudio');
+    if (!a.src) {
+      a.src = EPISODE.audio;
+      $('lcover').src = EPISODE.cover;
+      $('ltitle').textContent = EPISODE.title;
+      $('lshow').textContent = EPISODE.show;
+    }
+    show('listen');
+  };
+  // Lock-screen title, artwork and buttons.
+  if ('mediaSession' in navigator) {
+    $('laudio').addEventListener('play', function () {
+      var a = $('laudio');
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: EPISODE.title, artist: EPISODE.show,
+        artwork: [{ src: EPISODE.cover, sizes: '3000x3000', type: 'image/jpeg' }]
+      });
+      var skip = function (by) { a.currentTime = Math.max(0, Math.min(a.duration || 0, a.currentTime + by)); };
+      navigator.mediaSession.setActionHandler('play', function () { a.play(); });
+      navigator.mediaSession.setActionHandler('pause', function () { a.pause(); });
+      navigator.mediaSession.setActionHandler('seekbackward', function () { skip(-15); });
+      navigator.mediaSession.setActionHandler('seekforward', function () { skip(30); });
+    });
+  }
   $('mic').onclick = talk;
   $('splashMic').onclick = talk;
   $('more').onclick = function () { run(false); };
