@@ -558,9 +558,31 @@
       showAdd(false);
     }).lockAdding();
   };
+  // No key yet (a home-screen copy keeps its own storage): paste the link or key once.
   if (!KEY) {
-    $('splash').innerHTML = '<p class="note">Open this from your shortcut.</p>';
     document.querySelector('nav').hidden = true;
+    $('splash').innerHTML =
+      '<form class="pill" id="keyForm" autocomplete="off">' +
+      '<input class="field" id="keyIn" type="password" placeholder="Paste your link" autocapitalize="off" spellcheck="false">' +
+      '<button class="icon" type="submit" aria-label="Go">&#8594;</button></form>' +
+      '<p class="note" id="keyNote" hidden></p>';
+    $('keyForm').onsubmit = function (e) {
+      e.preventDefault();
+      var raw = $('keyIn').value.trim();
+      var m = /k=([\w-]+)/.exec(raw);
+      KEY = m ? m[1] : raw;
+      api()
+        .withSuccessHandler(function () {
+          try { localStorage.setItem('k', KEY); } catch (err) {}
+          location.reload();
+        })
+        .withFailureHandler(function () {
+          KEY = '';
+          $('keyNote').textContent = 'That one didn’t work. Paste the whole link from the file.';
+          $('keyNote').hidden = false;
+        })
+        .canAdd();
+    };
   } else {
     api().withSuccessHandler(function (open) { $('openAdd').hidden = !open; }).canAdd();
     startSubs();
