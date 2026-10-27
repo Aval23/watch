@@ -379,18 +379,27 @@
     $('snote').hidden = !text;
   }
 
+  // Loaded in the background as soon as the page opens, so the tab is ready when tapped.
+  var feeds = {};
+  var subsStarted = false;
+  function startSubs() {
+    if (subsStarted) return;
+    subsStarted = true;
+    api()
+      .withSuccessHandler(function (list) {
+        chanList = list;
+        drawChans();
+        loadFeed();
+      })
+      .withFailureHandler(function () { subsStarted = false; snote('Something went wrong. Try again.'); })
+      .subscriptionList();
+  }
+
   function openSubs() {
     show('subs');
     if (!chanList) {
       snote('Loading…');
-      api()
-        .withSuccessHandler(function (list) {
-          chanList = list;
-          drawChans();
-          loadFeed();
-        })
-        .withFailureHandler(function () { snote('Something went wrong. Try again.'); })
-        .subscriptionList();
+      startSubs();
     }
   }
 
@@ -418,16 +427,22 @@
   function loadFeed() {
     $('sgrid').innerHTML = '';
     if (!chanList.length) { snote('No subscriptions yet.'); return; }
-    snote('Loading…');
     var want = chanPick;
+    if (feeds[want || '']) { drawFeed(feeds[want || '']); return; }
+    snote('Loading…');
     api()
       .withSuccessHandler(function (res) {
-        if (want !== chanPick) return;
-        res.items.forEach(function (v) { addCard(v, 'sgrid'); });
-        snote(res.items.length ? '' : 'No videos.');
+        feeds[want || ''] = res.items;
+        if (want === chanPick) drawFeed(res.items);
       })
       .withFailureHandler(function () { snote('Something went wrong. Try again.'); })
       .subscriptionFeed(want);
+  }
+
+  function drawFeed(items) {
+    $('sgrid').innerHTML = '';
+    items.forEach(function (v) { addCard(v, 'sgrid'); });
+    snote(items.length ? '' : 'No videos.');
   }
 
   // Talk to text: the browser's speech recognition, searching as soon as you stop talking.
@@ -466,19 +481,15 @@
   }
   $('q').onblur = function () { if (!listening) $('q').placeholder = 'Search'; };
 
+  // Every card already passed the server's filters, so it plays without another round trip.
   function play(v, title, channel) {
-    api()
-      .withSuccessHandler(function (ok) {
-        if (!ok) return;
-        show('watch');
-        $('wtitle').textContent = title;
-        $('wsub').textContent = [views(v.views), ago(v.published)].filter(Boolean).join('  ');
-        $('wchan').textContent = channel;
-        if (v.avatar) $('wav').src = v.avatar; else $('wav').removeAttribute('src');
-        $('player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + v.id +
-          '?playsinline=1&rel=0&autoplay=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
-      })
-      .canPlay(v.id);
+    show('watch');
+    $('wtitle').textContent = title;
+    $('wsub').textContent = [views(v.views), ago(v.published)].filter(Boolean).join('  ');
+    $('wchan').textContent = channel;
+    if (v.avatar) $('wav').src = v.avatar; else $('wav').removeAttribute('src');
+    $('player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + v.id +
+      '?playsinline=1&rel=0&autoplay=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
   }
 
   $('form').onsubmit = function (e) {
@@ -545,6 +556,7 @@
     document.querySelector('nav').hidden = true;
   } else {
     api().withSuccessHandler(function (open) { $('openAdd').hidden = !open; }).canAdd();
+    startSubs();
   }
 </script>
 </body>
