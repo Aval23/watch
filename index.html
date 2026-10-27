@@ -182,11 +182,53 @@
   .row-btn svg { width: 24px; height: 24px; }
   .you h2 { font-size: 20px; margin: 16px 12px 4px; }
 
-  /* Listen test: one podcast episode, to check play-while-locked */
-  .listen { max-width: 480px; margin: 0 auto; padding: 16px 12px 32px; display: flex; flex-direction: column; gap: 12px; }
-  .listen img { width: 100%; aspect-ratio: 1; border-radius: 12px; object-fit: cover; background: var(--field); }
-  .listen audio { width: 100%; }
-  .listen p { color: var(--muted); font-size: 13px; margin: 0; }
+  /* Listen: podcasts */
+  body.mini-on { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+  .psearch { padding: 8px 12px; }
+  .psearch input { width: 100%; height: 40px; border: 0; border-radius: 20px; padding: 0 16px; background: var(--field);
+                   color: var(--fg); font-size: 16px; outline: none; -webkit-appearance: none; }
+  #listen h2, #show h2 { font-size: 20px; margin: 16px 12px 4px; }
+  .prow { display: flex; align-items: center; gap: 12px; padding: 8px 12px; cursor: pointer; }
+  .prow img { width: 56px; height: 56px; border-radius: 8px; flex: none; object-fit: cover; background: var(--field); }
+  .prow .txt { min-width: 0; }
+  .prow .title { font-size: 15px; }
+  .tile { width: 120px; flex: none; cursor: pointer; }
+  .tile img { width: 120px; height: 120px; border-radius: 8px; object-fit: cover; background: var(--field); display: block; }
+  .tile div { font-size: 13px; font-weight: 500; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical; overflow: hidden; }
+  .shead { display: flex; gap: 16px; align-items: center; padding: 16px 12px 8px; }
+  .shead img { width: 112px; height: 112px; border-radius: 12px; object-fit: cover; flex: none; background: var(--field); }
+  .shead .title { font-size: 20px; font-weight: 700; -webkit-line-clamp: 3; }
+  .follow { display: block; margin: 8px 12px; border: 0; width: calc(100% - 24px); cursor: pointer; text-align: center; }
+  .follow.no { background: var(--fg); color: var(--bg); }
+  .ep { padding: 12px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .ep .title { font-size: 15px; }
+  .ep .sub { margin-top: 4px; }
+  .ep .about { color: var(--muted); font-size: 13px; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2;
+               -webkit-box-orient: vertical; overflow: hidden; }
+  .epa { display: flex; gap: 8px; margin-top: 8px; }
+  .epa .act { height: 32px; font-size: 13px; }
+  .ep.done .title { color: var(--muted); }
+  #mini { position: fixed; left: 0; right: 0; bottom: calc(57px + env(safe-area-inset-bottom)); z-index: 3;
+          background: var(--field); display: flex; align-items: center; gap: 12px; padding: 0 4px 0 8px; height: 64px;
+          cursor: pointer; }
+  #mini img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex: none; background: var(--bg); }
+  #mini .txt { flex: 1; min-width: 0; }
+  #mini .title { font-size: 14px; -webkit-line-clamp: 1; }
+  #mini .icon svg { width: 28px; height: 28px; }
+  #mbar { position: absolute; left: 0; bottom: 0; height: 2px; background: #f00; width: 0; }
+  .pod { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 24px 24px;
+            max-width: 480px; margin: 0 auto; }
+  .pod > img { width: 100%; aspect-ratio: 1; border-radius: 12px; object-fit: cover; background: var(--field); }
+  .pod .title { font-size: 18px; font-weight: 700; text-align: center; -webkit-line-clamp: 3; }
+  .pod .sub { text-align: center; }
+  .pod input[type=range] { width: 100%; accent-color: #f00; }
+  .times { width: 100%; display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: -8px; }
+  .ctrls { display: flex; align-items: center; justify-content: center; gap: 28px; }
+  .ctrls .icon { width: 56px; height: 56px; }
+  .ctrls .icon svg { width: 36px; height: 36px; }
+  .ctrls .big { width: 72px; height: 72px; background: var(--fg); color: var(--bg); }
+  .ctrls .big svg { width: 44px; height: 44px; }
   .hrow { display: flex; gap: 12px; overflow-x: auto; padding: 8px 12px; scrollbar-width: none; align-items: flex-start; }
   .hrow::-webkit-scrollbar { display: none; }
   .hrow .card { width: 168px; flex: none; padding-bottom: 0; }
@@ -229,6 +271,13 @@
   <symbol id="i-later" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7z"/></symbol>
   <symbol id="i-history" viewBox="0 0 24 24"><path d="M14 2a10 10 0 0 0-9.95 9H1l4 4 4-4H6.06A8 8 0 1 1 14 20a7.94 7.94 0 0 1-5.66-2.34l-1.42 1.42A10 10 0 1 0 14 2zm-1 5v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v8l6-4z"/></symbol>
+  <symbol id="i-pod" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h2v-8H5v-1a7 7 0 0 1 14 0v1h-2v8h2a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></symbol>
+  <symbol id="i-back15" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/><text x="12" y="16.5" font-size="7" text-anchor="middle" font-family="Arial" font-weight="700">15</text></symbol>
+  <symbol id="i-fwd30" viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/><text x="12" y="16.5" font-size="7" text-anchor="middle" font-family="Arial" font-weight="700">30</text></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
   <symbol id="i-block" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2a8 8 0 0 1 6.32 12.9L7.1 5.68A7.95 7.95 0 0 1 12 4zm0 16a8 8 0 0 1-6.32-12.9L16.9 18.32A7.95 7.95 0 0 1 12 20z"/></symbol>
 </svg>
 
@@ -323,7 +372,6 @@
   <section class="you" id="you" hidden>
     <div class="me"><div class="ring"><svg><use href="#i-you"/></svg></div><span>You</span></div>
     <button class="row-btn" id="openLater"><svg><use href="#i-later"/></svg>Watch later</button>
-    <button class="row-btn" id="openListen"><svg><use href="#i-mic"/></svg>Listen test</button>
     <button class="row-btn" id="openAdd" hidden><svg><use href="#i-block"/></svg>Blocked words</button>
     <div id="mine" hidden>
       <h2>Playlists</h2>
@@ -331,11 +379,42 @@
     </div>
   </section>
 
-  <section class="listen" id="listen" hidden>
-    <img id="lcover" alt="">
-    <div><div class="title" id="ltitle"></div><div class="sub" id="lshow"></div></div>
-    <audio id="laudio" controls preload="none"></audio>
-    <p>Press play, then lock your phone or swipe to another app. It should keep playing, with controls on the lock screen.</p>
+  <section id="listen" hidden>
+    <form class="psearch" id="pform" autocomplete="off">
+      <input id="pq" type="search" placeholder="Search podcasts" enterkeyhint="search">
+    </form>
+    <div id="presults" hidden></div>
+    <p class="note" id="pnote2" hidden></p>
+    <div id="lhome">
+      <h2>Following</h2>
+      <div class="hrow" id="follows"></div>
+      <p class="note" id="fnote" hidden>Search for a show, then tap Follow.</p>
+      <h2>Downloads</h2>
+      <div id="dls"></div>
+      <p class="note" id="dnote" hidden>Tap Save on an episode to keep it for offline.</p>
+    </div>
+  </section>
+
+  <section id="show" hidden>
+    <div class="shead"><img id="sart" alt=""><div><div class="title" id="stitle"></div><div class="sub" id="sauthor"></div></div></div>
+    <button class="subbed follow" id="followBtn">Follow</button>
+    <button class="cdesc short" id="sabout"></button>
+    <h2>Episodes</h2>
+    <div id="eps"></div>
+    <p class="note" id="enote" hidden></p>
+  </section>
+
+  <section class="pod" id="pplayer" hidden>
+    <img id="part" alt="">
+    <div><div class="title" id="ptitle2"></div><div class="sub" id="pshow"></div></div>
+    <input type="range" id="seek" min="0" max="1" step="1" value="0">
+    <div class="times"><span id="tnow">0:00</span><span id="tleft">-0:00</span></div>
+    <div class="ctrls">
+      <button class="icon" id="back15" aria-label="Back 15 seconds"><svg><use href="#i-back15"/></svg></button>
+      <button class="icon big" id="pp" aria-label="Play or pause"><svg><use id="ppIcon" href="#i-play"/></svg></button>
+      <button class="icon" id="fwd30" aria-label="Forward 30 seconds"><svg><use href="#i-fwd30"/></svg></button>
+    </div>
+    <button class="act" id="speed">1×</button>
   </section>
 
   <section class="add" id="add" hidden>
@@ -350,9 +429,18 @@
   </section>
 </main>
 
+<audio id="audio" preload="metadata"></audio>
+<div id="mini" hidden>
+  <img id="mart" alt="">
+  <div class="txt"><div class="title" id="mtitle"></div><div class="sub" id="mshow"></div></div>
+  <button class="icon" id="mpp" aria-label="Play or pause"><svg><use id="mppIcon" href="#i-play"/></svg></button>
+  <div id="mbar"></div>
+</div>
+
 <nav>
   <button id="navHome"><svg><use id="homeIcon" href="#i-home"/></svg>Home</button>
   <button id="navSubs"><svg><use id="subsIcon" href="#i-subs-o"/></svg>Subscriptions</button>
+  <button id="navListen"><svg><use href="#i-pod"/></svg>Listen</button>
   <button id="navYou"><svg><use href="#i-you"/></svg>You</button>
 </nav>
 
@@ -475,13 +563,17 @@
     $('you').hidden = view !== 'you';
     $('add').hidden = view !== 'add';
     $('listen').hidden = view !== 'listen';
+    $('show').hidden = view !== 'show';
+    $('pplayer').hidden = view !== 'player';
+    if (nowEp) $('mini').hidden = view === 'player';
     var onSubs = view === 'subs' || (view === 'watch' && from === 'subs');
-    var onYou = view === 'you' || view === 'add' || view === 'later' || view === 'listen' || (view === 'watch' && from === 'later');
-    $('homeIcon').setAttribute('href', !onSubs && !onYou ? '#i-home' : '#i-home-o');
+    var onYou = view === 'you' || view === 'add' || view === 'later' || (view === 'watch' && from === 'later');
+    var onListen = view === 'listen' || view === 'show' || view === 'player';
+    $('homeIcon').setAttribute('href', !onSubs && !onYou && !onListen ? '#i-home' : '#i-home-o');
     $('subsIcon').setAttribute('href', onSubs ? '#i-subs' : '#i-subs-o');
     searching(view === 'results' && !!query);
     if (!opts.pop) record(view, opts.v);
-    $('hback').hidden = !(depth > 0 && /^(watch|later|add|channel|playlist|listen)$/.test(view));
+    $('hback').hidden = !(depth > 0 && /^(watch|later|add|channel|playlist|show|player)$/.test(view));
     window.scrollTo(0, 0);
   }
 
@@ -492,10 +584,11 @@
   var depth = 0;
   var searches = {};
   function record(view, v) {
-    var s = { view: view, query: query, from: from, v: v || null, ch: curChan, tab: curTab, pl: curPl };
+    var s = { view: view, query: query, from: from, v: v || null, ch: curChan, tab: curTab, pl: curPl, sh: curShow };
     var was = history.state;
     var same = was && was.view === view && view !== 'watch' && was.query === query &&
-      was.ch === curChan && (was.pl && was.pl.id) === (curPl && curPl.id);
+      was.ch === curChan && (was.pl && was.pl.id) === (curPl && curPl.id) &&
+      (was.sh && was.sh.feed) === (curShow && curShow.feed);
     try {
       if (was) history.replaceState(Object.assign({}, was, { y: window.scrollY }), '');
       if (same) {
@@ -516,6 +609,7 @@
     if (list === 'results' && s.query !== query) restoreSearch(s.query);
     if (list === 'channel' && s.ch && (s.ch !== curChan || s.tab !== curTab)) openChannel(s.ch, s.tab, { quiet: true });
     if (list === 'playlist' && s.pl && (!curPl || s.pl.id !== curPl.id)) openPlaylist(s.pl, { quiet: true });
+    if (list === 'show' && s.sh && (!curShow || s.sh.feed !== curShow.feed)) openShow(s.sh, { quiet: true });
     if (s.view === 'watch' && s.v) {
       from = s.from;
       play(s.v, { pop: true });
@@ -763,6 +857,7 @@
   // Every card already passed the server's filters, so it plays without another round trip.
   var playing = null;
   function play(v, opts) {
+    $('audio').pause();
     show('watch', { pop: opts && opts.pop, v: v });
     playing = v;
     var channel = decode(v.channel);
@@ -1174,39 +1269,423 @@
   };
   $('openLater').onclick = function () { drawLater(); show('later'); };
 
-  // Listen test: a podcast feed's own audio file, which is published to be
-  // downloaded and played in the background. One fixed episode for now.
-  var EPISODE = {
-    title: 'The Spirit of Eternal Life in John',
-    show: 'BibleProject',
-    cover: 'https://image.simplecastcdn.com/images/f0e3e0b5-a1ce-42eb-b6b9-514235b6a2b8/3fdf3739-f770-4d7e-b64d-6750407ef541/3000x3000/podcast-cover.jpg?aid=rss_feed',
-    audio: 'https://afp-597195-injected.calisto.simplecastaudio.com/695767b0-cd40-4e6c-ac8c-ac6bc0df77ee/episodes/b33ce6bc-1104-4234-b598-83e18231e98b/audio/128/default.mp3?aid=rss_feed&awCollectionId=695767b0-cd40-4e6c-ac8c-ac6bc0df77ee&awEpisodeId=b33ce6bc-1104-4234-b598-83e18231e98b&feed=3NVmUWZO'
-  };
-  $('openListen').onclick = function () {
-    var a = $('laudio');
-    if (!a.src) {
-      a.src = EPISODE.audio;
-      $('lcover').src = EPISODE.cover;
-      $('ltitle').textContent = EPISODE.title;
-      $('lshow').textContent = EPISODE.show;
-    }
+  // Listen: podcasts, read from each show's public feed. Feeds are published to be
+  // downloaded and played in the background, so this tab can do both. Followed
+  // shows, play positions and downloads live on this phone only.
+  function store(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; }
+  }
+  function keep(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  var curShow = null;
+  var feeds2 = {};
+  var podResults = [];
+
+  function openListen() {
     show('listen');
-  };
-  // Lock-screen title, artwork and buttons.
-  if ('mediaSession' in navigator) {
-    $('laudio').addEventListener('play', function () {
-      var a = $('laudio');
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: EPISODE.title, artist: EPISODE.show,
-        artwork: [{ src: EPISODE.cover, sizes: '3000x3000', type: 'image/jpeg' }]
-      });
-      var skip = function (by) { a.currentTime = Math.max(0, Math.min(a.duration || 0, a.currentTime + by)); };
-      navigator.mediaSession.setActionHandler('play', function () { a.play(); });
-      navigator.mediaSession.setActionHandler('pause', function () { a.pause(); });
-      navigator.mediaSession.setActionHandler('seekbackward', function () { skip(-15); });
-      navigator.mediaSession.setActionHandler('seekforward', function () { skip(30); });
+    drawListenHome();
+  }
+
+  function drawListenHome() {
+    var follows = store('shows', []);
+    $('follows').innerHTML = '';
+    follows.forEach(function (p) {
+      var t = document.createElement('div');
+      t.className = 'tile';
+      var img = document.createElement('img');
+      img.alt = '';
+      if (p.art) img.src = p.art;
+      var name = document.createElement('div');
+      name.textContent = p.title;
+      t.appendChild(img);
+      t.appendChild(name);
+      t.onclick = function () { openShow(p); };
+      $('follows').appendChild(t);
+    });
+    $('fnote').hidden = !!follows.length;
+    var dls = store('dls', []);
+    $('dls').innerHTML = '';
+    dls.forEach(function (d) { $('dls').appendChild(epRow(d.ep, d.show, true)); });
+    $('dnote').hidden = !!dls.length;
+  }
+
+  function podRow(p) {
+    var row = document.createElement('div');
+    row.className = 'prow';
+    var img = document.createElement('img');
+    img.alt = '';
+    if (p.art) img.src = p.art;
+    var txt = document.createElement('div');
+    txt.className = 'txt';
+    var title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = p.title;
+    var sub = document.createElement('div');
+    sub.className = 'sub';
+    sub.textContent = p.author;
+    txt.appendChild(title);
+    txt.appendChild(sub);
+    row.appendChild(img);
+    row.appendChild(txt);
+    row.onclick = function () { openShow(p); };
+    return row;
+  }
+
+  function podSearch(q) {
+    $('presults').innerHTML = '';
+    $('presults').hidden = false;
+    $('lhome').hidden = true;
+    $('pnote2').hidden = true;
+    api()
+      .withSuccessHandler(function (list) {
+        podResults = list;
+        list.forEach(function (p) { $('presults').appendChild(podRow(p)); });
+        $('pnote2').textContent = list.length ? '' : 'No shows found.';
+        $('pnote2').hidden = !!list.length;
+      })
+      .withFailureHandler(function () {
+        $('pnote2').textContent = 'Something went wrong. Try again.';
+        $('pnote2').hidden = false;
+      })
+      .podcastSearch(q);
+  }
+
+  function isFollowing(p) {
+    return store('shows', []).some(function (x) { return x.feed === p.feed; });
+  }
+
+  function openShow(p, opts) {
+    opts = opts || {};
+    curShow = { id: p.id, title: p.title, author: p.author, art: p.art, feed: p.feed };
+    if (!opts.quiet) show('show', opts);
+    $('stitle').textContent = p.title;
+    $('sauthor').textContent = p.author || '';
+    if (p.art) $('sart').src = p.art; else $('sart').removeAttribute('src');
+    $('sabout').textContent = '';
+    $('sabout').hidden = true;
+    drawFollow();
+    $('eps').innerHTML = '';
+    $('enote').hidden = true;
+    var feed = p.feed;
+    if (feeds2[feed]) { drawShow(feeds2[feed]); return; }
+    skeleton('eps', 3);
+    api()
+      .withSuccessHandler(function (f) {
+        if (!curShow || curShow.feed !== feed) return;
+        unskeleton('eps');
+        if (!f) { $('enote').textContent = 'Couldn’t load this show.'; $('enote').hidden = false; return; }
+        feeds2[feed] = f;
+        drawShow(f);
+      })
+      .withFailureHandler(function () {
+        unskeleton('eps');
+        $('enote').textContent = 'Something went wrong. Try again.';
+        $('enote').hidden = false;
+      })
+      .podcastFeed(feed);
+  }
+
+  function drawShow(f) {
+    if (!curShow.art && f.art) { curShow.art = f.art; $('sart').src = f.art; }
+    if (!curShow.author && f.author) { curShow.author = f.author; $('sauthor').textContent = f.author; }
+    $('sabout').textContent = f.about;
+    $('sabout').hidden = !f.about;
+    $('sabout').classList.add('short');
+    $('eps').innerHTML = '';
+    f.episodes.forEach(function (ep) { $('eps').appendChild(epRow(ep, curShow, false)); });
+    $('enote').textContent = f.episodes.length ? '' : 'No episodes.';
+    $('enote').hidden = !!f.episodes.length;
+  }
+
+  function drawFollow() {
+    var on = isFollowing(curShow);
+    $('followBtn').textContent = on ? 'Following' : 'Follow';
+    $('followBtn').classList.toggle('no', !on);
+  }
+
+  function mins(s) {
+    if (!s) return '';
+    var m = Math.round(s / 60);
+    return m >= 60 ? Math.floor(m / 60) + ' hr ' + (m % 60) + ' min' : m + ' min';
+  }
+
+  // One episode: title, date and length (or time left), then Play and Save.
+  function epRow(ep, sh, inDownloads) {
+    var row = document.createElement('div');
+    row.className = 'ep';
+    var pos = store('pos', {})[ep.id];
+    if (pos === -1) row.classList.add('done');
+    var title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = ep.title;
+    var sub = document.createElement('div');
+    sub.className = 'sub';
+    var when = ep.published ? new Date(ep.published) : null;
+    var left = pos === -1 ? 'Played' : pos > 0 && ep.seconds ? mins(ep.seconds - pos) + ' left' : mins(ep.seconds);
+    sub.textContent = [inDownloads ? sh.title : '',
+      when && !isNaN(when) ? when.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+      left].filter(Boolean).join(' · ');
+    row.appendChild(title);
+    row.appendChild(sub);
+    if (ep.about && !inDownloads) {
+      var about = document.createElement('div');
+      about.className = 'about';
+      about.textContent = ep.about;
+      row.appendChild(about);
+    }
+    var acts = document.createElement('div');
+    acts.className = 'epa';
+    var playB = document.createElement('button');
+    playB.className = 'act';
+    playB.innerHTML = '<svg><use href="#i-play"/></svg>Play';
+    playB.onclick = function (e) { e.stopPropagation(); playEp(ep, sh); };
+    var saveB = document.createElement('button');
+    saveB.className = 'act';
+    drawSaveBtn(saveB, ep);
+    saveB.onclick = function (e) {
+      e.stopPropagation();
+      if (isDownloaded(ep)) {
+        removeDownload(ep).then(function () {
+          if (inDownloads) drawListenHome(); else drawSaveBtn(saveB, ep);
+        });
+      } else {
+        download(ep, sh, saveB);
+      }
+    };
+    acts.appendChild(playB);
+    acts.appendChild(saveB);
+    row.appendChild(acts);
+    row.onclick = function () { playEp(ep, sh); };
+    return row;
+  }
+
+  function drawSaveBtn(b, ep) {
+    var on = isDownloaded(ep);
+    b.innerHTML = '<svg><use href="' + (on ? '#i-check' : '#i-dl') + '"/></svg>' + (on ? 'Saved' : 'Save');
+  }
+
+  // Downloads: the audio file goes into the page's own storage on this phone.
+  // Some podcast hosts don't allow a page to save their files; those say so.
+  function db() {
+    return new Promise(function (resolve, reject) {
+      var o = indexedDB.open('yatch', 1);
+      o.onupgradeneeded = function () { o.result.createObjectStore('audio'); };
+      o.onsuccess = function () { resolve(o.result); };
+      o.onerror = function () { reject(o.error); };
     });
   }
+  function dbDo(mode, fn) {
+    return db().then(function (d) {
+      return new Promise(function (resolve, reject) {
+        var tx = d.transaction('audio', mode);
+        var req = fn(tx.objectStore('audio'));
+        tx.oncomplete = function () { resolve(req && req.result); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+  function isDownloaded(ep) {
+    return store('dls', []).some(function (d) { return d.ep.id === ep.id; });
+  }
+
+  var saving = {};
+  function download(ep, sh, btn) {
+    if (saving[ep.id]) return;
+    saving[ep.id] = true;
+    btn.textContent = 'Saving…';
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+    fetch(ep.audio, { mode: 'cors' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('http');
+        var total = Number(r.headers.get('content-length')) || 0;
+        if (!r.body || !r.body.getReader) return r.blob();
+        var reader = r.body.getReader(), parts = [], got = 0;
+        var pump = function () {
+          return reader.read().then(function (x) {
+            if (x.done) return new Blob(parts, { type: r.headers.get('content-type') || 'audio/mpeg' });
+            parts.push(x.value);
+            got += x.value.length;
+            if (total) btn.textContent = 'Saving ' + Math.floor(got * 100 / total) + '%';
+            return pump();
+          });
+        };
+        return pump();
+      })
+      .then(function (blob) { return dbDo('readwrite', function (st) { return st.put(blob, ep.id); }); })
+      .then(function () {
+        var list = store('dls', []).filter(function (d) { return d.ep.id !== ep.id; });
+        list.unshift({ ep: ep, show: sh });
+        keep('dls', list);
+        saving[ep.id] = false;
+        drawSaveBtn(btn, ep);
+        toast('Saved for offline');
+      })
+      .catch(function () {
+        saving[ep.id] = false;
+        drawSaveBtn(btn, ep);
+        toast('This show doesn’t allow saving. It still plays.');
+      });
+  }
+  function removeDownload(ep) {
+    keep('dls', store('dls', []).filter(function (d) { return d.ep.id !== ep.id; }));
+    toast('Removed from downloads');
+    return dbDo('readwrite', function (st) { return st['delete'](ep.id); }).catch(function () {});
+  }
+
+  // The player: one audio element for the whole page, a mini bar above the tabs,
+  // a full screen when tapped, and the lock screen through Media Session.
+  var nowEp = null, nowShow = null, blobUrl = null, loaded = false;
+  var audio = $('audio');
+  var RATES = [1, 1.25, 1.5, 1.75, 2];
+
+  function playEp(ep, sh) {
+    var a = audio;
+    if (loaded && nowEp && nowEp.id === ep.id) { a.play(); return; }
+    loaded = true;
+    nowEp = ep;
+    nowShow = sh;
+    keep('now', { ep: ep, show: sh });
+    var f = $('player').querySelector('iframe');
+    if (f) f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
+    var start = function (src) {
+      a.src = src;
+      a.playbackRate = store('rate', 1);
+      a.play().catch(function () {});
+    };
+    var go = function () {
+      if (!isDownloaded(ep)) { start(ep.audio); return; }
+      dbDo('readonly', function (st) { return st.get(ep.id); }).then(function (blob) {
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        blobUrl = blob ? URL.createObjectURL(blob) : null;
+        start(blobUrl || ep.audio);
+      }).catch(function () { start(ep.audio); });
+    };
+    go();
+    drawNow();
+    setSession();
+  }
+
+  audio.addEventListener('loadedmetadata', function () {
+    var p = nowEp && store('pos', {})[nowEp.id];
+    if (p > 0 && p < audio.duration - 5) audio.currentTime = p;
+    $('seek').max = Math.floor(audio.duration || 0);
+  });
+
+  function drawNow() {
+    if (!nowEp) return;
+    var art = nowEp.art || nowShow.art || '';
+    $('mini').hidden = current === 'player';
+    document.body.classList.add('mini-on');
+    $('mtitle').textContent = $('ptitle2').textContent = nowEp.title;
+    $('mshow').textContent = $('pshow').textContent = nowShow.title;
+    if (art) { $('mart').src = art; $('part').src = art; }
+    $('speed').textContent = store('rate', 1) + '×';
+  }
+
+  function drawPlaying() {
+    var icon = audio.paused ? '#i-play' : '#i-pause';
+    $('mppIcon').setAttribute('href', icon);
+    $('ppIcon').setAttribute('href', icon);
+  }
+  audio.addEventListener('play', drawPlaying);
+  audio.addEventListener('pause', drawPlaying);
+
+  // Remember where each episode was left, every few seconds; near the end counts as played.
+  var lastSave = 0;
+  audio.addEventListener('timeupdate', function () {
+    var t = audio.currentTime, d = audio.duration || 0;
+    $('mbar').style.width = d ? (t * 100 / d) + '%' : '0';
+    if (!seeking) $('seek').value = Math.floor(t);
+    $('tnow').textContent = clock(Math.floor(t)) || '0:00';
+    $('tleft').textContent = '-' + (clock(Math.floor(d - t)) || '0:00');
+    if (!nowEp || Date.now() - lastSave < 5000) return;
+    lastSave = Date.now();
+    var pos = store('pos', {});
+    pos[nowEp.id] = d && d - t < 30 ? -1 : Math.floor(t);
+    keep('pos', pos);
+  });
+  audio.addEventListener('ended', function () {
+    if (!nowEp) return;
+    var pos = store('pos', {});
+    pos[nowEp.id] = -1;
+    keep('pos', pos);
+  });
+
+  function skip(by) {
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + by));
+  }
+  function toggle() {
+    if (!loaded && nowEp) playEp(nowEp, nowShow);
+    else if (audio.paused) audio.play();
+    else audio.pause();
+  }
+
+  function setSession() {
+    if (!('mediaSession' in navigator) || !nowEp) return;
+    var art = nowEp.art || nowShow.art;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: nowEp.title, artist: nowShow.title,
+      artwork: art ? [{ src: art, sizes: '512x512' }] : []
+    });
+    var set = function (action, fn) { try { navigator.mediaSession.setActionHandler(action, fn); } catch (e) {} };
+    set('play', function () { if (loaded) audio.play(); else toggle(); });
+    set('pause', function () { audio.pause(); });
+    set('seekbackward', function () { skip(-15); });
+    set('seekforward', function () { skip(30); });
+    set('seekto', function (d) { audio.currentTime = d.seekTime; });
+  }
+
+  var seeking = false;
+  $('seek').addEventListener('input', function () { seeking = true; $('tnow').textContent = clock(Number($('seek').value)) || '0:00'; });
+  $('seek').addEventListener('change', function () { audio.currentTime = Number($('seek').value); seeking = false; });
+  $('mpp').onclick = function (e) { e.stopPropagation(); toggle(); };
+  $('pp').onclick = toggle;
+  $('back15').onclick = function () { skip(-15); };
+  $('fwd30').onclick = function () { skip(30); };
+  $('speed').onclick = function () {
+    var r = RATES[(RATES.indexOf(store('rate', 1)) + 1) % RATES.length];
+    keep('rate', r);
+    audio.playbackRate = r;
+    $('speed').textContent = r + '×';
+  };
+  $('mini').onclick = function () { show('player'); };
+  $('navListen').onclick = openListen;
+  $('followBtn').onclick = function () {
+    var list = store('shows', []).filter(function (x) { return x.feed !== curShow.feed; });
+    if (!isFollowing(curShow)) list.unshift(curShow);
+    keep('shows', list);
+    drawFollow();
+  };
+  $('sabout').onclick = function () { $('sabout').classList.toggle('short'); };
+  $('pform').onsubmit = function (e) {
+    e.preventDefault();
+    var q = $('pq').value.trim();
+    $('pq').blur();
+    if (q) podSearch(q);
+  };
+  $('pq').addEventListener('input', function () {
+    if ($('pq').value.trim()) return;
+    $('presults').hidden = $('pnote2').hidden = true;
+    $('lhome').hidden = false;
+    drawListenHome();
+  });
+
+  // Pick up where the last episode left off, paused, after the page reopens.
+  (function () {
+    var now = store('now', null);
+    if (!now) return;
+    nowEp = now.ep;
+    nowShow = now.show;
+    drawNow();
+    setSession();
+    drawPlaying();
+  })();
+
+  // The page itself is kept on the phone too, so downloads still open with no signal.
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+
   $('mic').onclick = talk;
   $('splashMic').onclick = talk;
   $('more').onclick = function () { run(false); };
