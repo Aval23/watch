@@ -134,6 +134,9 @@
   .chapters h3 { font-size: 16px; margin: 4px 0; }
   .chap { display: flex; gap: 12px; width: 100%; border: 0; background: none; padding: 8px 0; text-align: left; cursor: pointer; }
   .chap .t { color: var(--link); flex: none; width: 56px; font-size: 13px; padding-top: 1px; }
+  .txhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .txhead b { font-size: 16px; }
+  .txhead .act { background: var(--bg); }
   .less { display: block; border: 0; background: none; padding: 12px 0 0; font-weight: 500; cursor: pointer; }
   .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(72px + env(safe-area-inset-bottom));
            background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; z-index: 5; }
@@ -277,6 +280,8 @@
   <symbol id="i-subs-o" viewBox="0 0 24 24"><path d="M10 18v-6l5 3-5 3zm7-15H7v1h10V3zm3 3H4v1h16V6zm2 3H2v12h20V9zM3 10h18v10H3V10z"/></symbol>
   <symbol id="i-you"viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></symbol>
   <symbol id="i-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></symbol>
+  <symbol id="i-tx" viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/></symbol>
   <symbol id="i-saved" viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zM2 16h8v-2H2v2zm19.5-4.5L23 13l-6.99 7-4.51-4.5L13 14l3.01 3 5.49-5.5z"/></symbol>
   <symbol id="i-later" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7z"/></symbol>
@@ -337,6 +342,11 @@
     <div class="actions">
       <button class="act" id="shareBtn"><svg><use href="#i-share"/></svg>Share</button>
       <button class="act" id="saveBtn"><svg><use id="saveIcon" href="#i-save"/></svg><span id="saveLabel">Save</span></button>
+      <button class="act" id="txBtn"><svg><use href="#i-tx"/></svg>Transcript</button>
+    </div>
+    <div class="desc" id="tx" hidden>
+      <div class="txhead"><b>Transcript</b><button class="act" id="txCopy" hidden><svg><use href="#i-copy"/></svg>Copy all</button></div>
+      <div class="dtext" id="txtext"></div>
     </div>
   </div>
 
@@ -892,6 +902,7 @@
     if (v.avatar) $('wav').src = v.avatar; else $('wav').removeAttribute('src');
     $('wsubbed').hidden = !(chanList && chanList.some(function (c) { return c.title === channel; }));
     $('wmore').hidden = $('desc').hidden = true;
+    closeTx();
     drawSave();
     $('player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + v.id +
       '?playsinline=1&rel=0&autoplay=1&enablejsapi=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
@@ -994,6 +1005,95 @@
     if ($('wmore').hidden) return;
     $('desc').hidden = !open;
     $('wmore').textContent = open ? '' : '...more';
+  }
+
+  // Transcript: Gemini writes it on the server, since YouTube shares captions only
+  // with a video's owner. A long video can take a few minutes, so the page asks
+  // again every 5 seconds. Finished ones stay on this phone, the 20 newest.
+  var TX_MSG = {
+    working: 'Writing the transcript. A long video can take a few minutes; keep watching.',
+    nokey: 'Transcripts are not switched on yet: the Gemini key is missing.',
+    blocked: 'No transcript for this video.',
+    failed: 'The transcript did not come back. Tap Transcript to try again.'
+  };
+  var txFor = null, txState = '', txText = '', txTimer = null;
+  function closeTx() {
+    clearTimeout(txTimer);
+    txFor = null;
+    $('tx').hidden = true;
+  }
+  function openTx(v) {
+    if (txFor === v.id && txState !== 'failed') { closeTx(); return; }
+    txFor = v.id;
+    $('tx').hidden = false;
+    var saved = store('tx', []).filter(function (t) { return t.id === v.id; })[0];
+    if (saved) return drawTx(saved.text);
+    txWait('working');
+    txAsk('transcriptStart', [v.id], v);
+  }
+  function txAsk(fn, args, v) {
+    clearTimeout(txTimer);
+    var call = api()
+      .withSuccessHandler(function (r) {
+        if (txFor !== v.id) return;
+        if (r && r.status === 'done') {
+          keep('tx', [{ id: v.id, text: r.text }].concat(store('tx', []).filter(function (t) { return t.id !== v.id; })).slice(0, 20));
+          drawTx(r.text);
+        } else if (r && r.status === 'working') {
+          txTimer = setTimeout(function () { txAsk('transcriptCheck', [r.job, v.id], v); }, 5000);
+        } else {
+          txWait(r && TX_MSG[r.status] ? r.status : 'failed');
+        }
+      })
+      .withFailureHandler(function () { if (txFor === v.id) txWait('failed'); });
+    call[fn].apply(null, args);
+  }
+  function txWait(state) {
+    txState = state;
+    $('txCopy').hidden = true;
+    $('txtext').textContent = TX_MSG[state];
+  }
+  // Same tappable timestamps as the description.
+  function drawTx(text) {
+    txState = 'done';
+    txText = text;
+    var box = $('txtext');
+    box.innerHTML = '';
+    var last = 0, m;
+    TS.lastIndex = 0;
+    while ((m = TS.exec(text))) {
+      box.appendChild(document.createTextNode(text.slice(last, m.index)));
+      box.appendChild(stamp(m[0], secs(m)));
+      last = TS.lastIndex;
+    }
+    box.appendChild(document.createTextNode(text.slice(last)));
+    $('txCopy').hidden = false;
+  }
+  // One tap puts the title, the link and the whole transcript on the clipboard.
+  function copyTx() {
+    if (!playing || txState !== 'done') return;
+    var all = decode(playing.title) + '\nhttps://youtu.be/' + playing.id + '\n\n' + txText;
+    var said = function (ok) { toast(ok ? 'Transcript copied' : 'Could not copy'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(all).then(function () { said(true); }, function () { said(oldCopy(all)); });
+    } else {
+      said(oldCopy(all));
+    }
+  }
+  // For browsers without the clipboard API: select a hidden box and copy it.
+  function oldCopy(text) {
+    var t = document.createElement('textarea');
+    t.value = text;
+    t.setAttribute('readonly', '');
+    t.style.position = 'fixed';
+    t.style.opacity = '0';
+    document.body.appendChild(t);
+    t.select();
+    t.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    t.remove();
+    return ok;
   }
 
   // Watch later lives on this phone only.
@@ -1291,6 +1391,8 @@
     if (from === 'later' && (current === 'later' || current === 'watch')) drawLater();
   }
   $('shareBtn').onclick = function () { if (playing) shareVideo(playing); };
+  $('txBtn').onclick = function () { if (playing) openTx(playing); };
+  $('txCopy').onclick = copyTx;
   $('saveBtn').onclick = function () { if (playing) toggleLater(playing); };
 
   // ⋮ on any video card: Watch later and Share, like the app's menu.
