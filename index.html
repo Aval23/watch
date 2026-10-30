@@ -104,10 +104,49 @@
   .more { display: block; margin: 0 auto 32px; border: 1px solid var(--line); background: none;
           border-radius: 18px; padding: 8px 18px; font-size: 14px; cursor: pointer; }
 
-  /* Watch */
+  /* Watch: the player sits outside the scrolling middle so it is never reloaded.
+     On the watch screen it is pinned under the header; anywhere else it shrinks to
+     a mini player above the tabs (flex order, not fixed positioning) and keeps playing. */
+  .watch { flex: none; z-index: 2; background: var(--bg); }
   .player { aspect-ratio: 16 / 9; width: 100%; background: #000; }
+  @media (min-width: 640px) { .watch:not(.mini) .player { max-width: min(100%, calc(60vh * 16 / 9)); margin: 0 auto; } }
   .player iframe { width: 100%; height: 100%; border: 0; display: block; }
-  @media (max-width: 639px) { .watch { position: sticky; top: 0; z-index: 2; background: var(--bg); } }
+  .watch.mini { order: 1; display: flex; align-items: center; height: 64px; background: var(--field);
+                position: relative; cursor: pointer; }
+  .watch.mini .player { width: 114px; height: 64px; flex: none; aspect-ratio: auto; pointer-events: none; }
+  .vmini { display: none; flex: 1; min-width: 0; align-items: center; gap: 4px; padding-left: 12px; }
+  .watch.mini .vmini { display: flex; }
+  .vmini .txt { flex: 1; min-width: 0; }
+  .vmini .title { font-size: 14px; -webkit-line-clamp: 1; }
+  .vmini .icon svg { width: 26px; height: 26px; }
+  #vbar { position: absolute; left: 0; bottom: 0; height: 2px; background: #f00; width: 0; display: none; }
+  .watch.mini #vbar { display: block; }
+  nav { order: 2; }
+  #mini { order: 1; }
+  /* Watched part of a video, under its thumbnail */
+  .prog { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #fff6; }
+  .prog i { display: block; height: 100%; background: #f00; }
+  @media (min-width: 640px) { .grid .prog { border-radius: 0 0 12px 12px; overflow: hidden; } }
+  /* Search: filters and the channel a search names */
+  .fbar { display: flex; gap: 8px; overflow-x: auto; padding: 8px 12px; scrollbar-width: none; }
+  .fbar::-webkit-scrollbar { display: none; }
+  .fbar .chip { flex: none; display: flex; align-items: center; gap: 6px; background: var(--chip); }
+  .fbar .chip svg { width: 18px; height: 18px; }
+  .chip.on { background: var(--fg); color: var(--bg); }
+  #fsheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; background: var(--bg); border-radius: 16px 16px 0 0;
+            padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); max-height: 80vh; overflow-y: auto; max-width: 560px; margin: 0 auto; }
+  #fsheet h3 { font-size: 14px; margin: 16px 0 8px; color: var(--muted); font-weight: 500; }
+  #fsheet .row .chip { background: var(--field); }
+  #fsheet .row .chip.on { background: var(--fg); color: var(--bg); }
+  .fhead { display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 700; }
+  .ccard { display: flex; align-items: center; gap: 16px; padding: 12px 16px 20px; cursor: pointer;
+           border-bottom: 1px solid var(--line); margin-bottom: 12px; grid-column: 1 / -1; }
+  .ccard img { width: 88px; height: 88px; border-radius: 50%; flex: none; object-fit: cover; background: var(--field); }
+  .ccard .cname { font-size: 18px; }
+  .sorts { display: flex; gap: 8px; padding: 0 12px 12px; }
+  .sorts .chip { background: var(--chip); }
+  .clear-h { display: block; margin: 4px 12px 12px; }
+  body.watching #fbar, body.watching #ccard { display: none; }
   .wmeta { padding: 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
   .wmeta .title { font-size: 18px; font-weight: 700; -webkit-line-clamp: 3; }
   .chan { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-weight: 500; font-size: 15px; }
@@ -129,7 +168,7 @@
   .stats b { display: block; font-size: 18px; }
   .stats span { color: var(--muted); font-size: 12px; }
   .dtext { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .ts { color: var(--link); cursor: pointer; }
+  .ts { color: var(--link); cursor: pointer; text-decoration: none; overflow-wrap: anywhere; }
   .chapters { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
   .chapters h3 { font-size: 16px; margin: 4px 0; }
   .chap { display: flex; gap: 12px; width: 100%; border: 0; background: none; padding: 8px 0; text-align: left; cursor: pointer; }
@@ -295,6 +334,8 @@
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
   <symbol id="i-dots" viewBox="0 0 24 24"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></symbol>
+  <symbol id="i-fill" viewBox="0 0 24 24"><path d="M5 5v10h2V8.41L17.59 19 19 17.59 8.41 7H15V5z"/></symbol>
+  <symbol id="i-tune" viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></symbol>
   <symbol id="i-block" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2a8 8 0 0 1 6.32 12.9L7.1 5.68A7.95 7.95 0 0 1 12 4zm0 16a8 8 0 0 1-6.32-12.9L16.9 18.32A7.95 7.95 0 0 1 12 20z"/></symbol>
 </svg>
 
@@ -314,7 +355,15 @@
   </div>
 </header>
 <div id="recent" hidden></div>
-
+<section class="watch" id="watch" hidden>
+  <div class="player" id="player"></div>
+  <div class="vmini">
+    <div class="txt"><div class="title" id="vtitle"></div><div class="sub" id="vchan"></div></div>
+    <button class="icon" id="vpp" aria-label="Play or pause"><svg><use id="vppIcon" href="#i-pause"/></svg></button>
+    <button class="icon" id="vclose" aria-label="Close"><svg><use href="#i-x"/></svg></button>
+  </div>
+  <div id="vbar"></div>
+</section>
 <main>
   <section class="splash" id="splash">
     <div class="brand"><img class="mark" src="icon-512.png" alt=""><div class="big">Yatch</div></div>
@@ -324,9 +373,6 @@
     </div>
   </section>
 
-  <section class="watch" id="watch" hidden>
-    <div class="player" id="player"></div>
-  </section>
   <div class="wmeta" id="wmeta" hidden>
     <button class="wtop" id="wtop">
       <div class="title" id="wtitle"></div>
@@ -351,6 +397,10 @@
   </div>
 
   <section id="list" hidden>
+    <div class="fbar" id="fbar">
+      <button class="chip" id="openFilters"><svg><use href="#i-tune"/></svg><span id="fcount">Filters</span></button>
+    </div>
+    <div id="ccard" hidden></div>
     <div class="grid" id="grid"></div>
     <p class="note" id="note" hidden></p>
     <button class="more" id="more" hidden>Show more</button>
@@ -374,6 +424,10 @@
       <button id="tabVideos" class="on">Videos</button>
       <button id="tabLists">Playlists</button>
     </div>
+    <div class="sorts" id="sorts">
+      <button class="chip on" id="sortLatest">Latest</button>
+      <button class="chip" id="sortPopular">Popular</button>
+    </div>
     <div class="grid" id="cgrid"></div>
     <p class="note" id="cnote" hidden></p>
     <button class="more" id="cmore" hidden>Show more</button>
@@ -390,9 +444,20 @@
     <div class="grid" id="lgrid"></div>
     <p class="note" id="lnote" hidden></p>
   </section>
+  <section id="history" hidden>
+    <div class="phead"><div class="title">History</div></div>
+    <button class="chip clear-h" id="clearHist">Clear all watch history</button>
+    <div class="grid" id="hgrid"></div>
+    <p class="note" id="hnote" hidden>Videos you watch show up here.</p>
+  </section>
 
   <section class="you" id="you" hidden>
     <div class="me"><div class="ring"><svg><use href="#i-you"/></svg></div><span>You</span></div>
+    <div id="histRow" hidden>
+      <h2>History</h2>
+      <div class="hrow" id="hrow"></div>
+    </div>
+    <button class="row-btn" id="openHist"><svg><use href="#i-history"/></svg>History</button>
     <button class="row-btn" id="openLater"><svg><use href="#i-later"/></svg>Watch later</button>
     <button class="row-btn" id="openAdd" hidden><svg><use href="#i-block"/></svg>Blocked words</button>
     <div id="mine" hidden>
@@ -452,6 +517,15 @@
 </main>
 
 <div id="sheetBg" hidden></div>
+<div id="fsheet" hidden>
+  <div class="fhead">Search filters<button class="icon" id="fclose" aria-label="Close"><svg><use href="#i-x"/></svg></button></div>
+  <h3>Upload date</h3>
+  <div class="row" data-f="date"><button class="chip" data-v="">Any time</button><button class="chip" data-v="hour">Last hour</button><button class="chip" data-v="today">Today</button><button class="chip" data-v="week">This week</button><button class="chip" data-v="month">This month</button><button class="chip" data-v="year">This year</button></div>
+  <h3>Duration</h3>
+  <div class="row" data-f="dur"><button class="chip" data-v="">Any</button><button class="chip" data-v="short">Under 4 minutes</button><button class="chip" data-v="medium">4–20 minutes</button><button class="chip" data-v="long">Over 20 minutes</button></div>
+  <h3>Sort by</h3>
+  <div class="row" data-f="sort"><button class="chip" data-v="">Relevance</button><button class="chip" data-v="date">Upload date</button><button class="chip" data-v="viewCount">View count</button><button class="chip" data-v="rating">Rating</button></div>
+</div>
 <div id="sheet" hidden>
   <button class="row-btn" id="sheetLater"><svg><use href="#i-later"/></svg><span id="sheetLaterText">Save to Watch later</span></button>
   <button class="row-btn" id="sheetShare"><svg><use href="#i-share"/></svg>Share</button>
@@ -582,40 +656,44 @@
     opts = opts || {};
     current = view;
     if (LISTS[view]) from = view;
-    if (view !== 'watch') { $('player').innerHTML = ''; playing = null; }
+    if (view === 'player') closeVideo();
     $('splash').hidden = view !== 'home';
     Object.keys(LISTS).forEach(function (k) {
       $(LISTS[k]).hidden = !(view === k || (view === 'watch' && from === k));
     });
     recent(false);
-    $('watch').hidden = $('wmeta').hidden = view !== 'watch';
+    $('wmeta').hidden = view !== 'watch';
+    document.body.classList.toggle('watching', view === 'watch');
+    $('watch').hidden = !(view === 'watch' || playing);
+    $('watch').classList.toggle('mini', view !== 'watch' && !!playing);
     $('you').hidden = view !== 'you';
     $('add').hidden = view !== 'add';
     $('listen').hidden = view !== 'listen';
     $('show').hidden = view !== 'show';
     $('pplayer').hidden = view !== 'player';
-    if (nowEp) $('mini').hidden = view === 'player';
+    if (nowEp) $('mini').hidden = view === 'player' || !!playing;
     var onSubs = view === 'subs' || (view === 'watch' && from === 'subs');
-    var onYou = view === 'you' || view === 'add' || view === 'later' || (view === 'watch' && from === 'later');
+    var onYou = view === 'you' || view === 'add' || view === 'later' || view === 'history' ||
+      (view === 'watch' && (from === 'later' || from === 'history'));
     var onListen = view === 'listen' || view === 'show' || view === 'player';
     $('homeIcon').setAttribute('href', !onSubs && !onYou && !onListen ? '#i-home' : '#i-home-o');
     $('subsIcon').setAttribute('href', onSubs ? '#i-subs' : '#i-subs-o');
     searching(view === 'results' && !!query);
     if (!opts.pop) record(view, opts.v);
-    $('hback').hidden = !(depth > 0 && /^(watch|later|add|channel|playlist|show|player)$/.test(view));
+    $('hback').hidden = !(depth > 0 && /^(watch|later|history|add|channel|playlist|show|player)$/.test(view));
     scroller.scrollTop = 0;
   }
 
   // Back: every screen is a history step, so the back swipe and back button walk
   // through screens instead of leaving the page. Searches are kept so going back
   // to results costs no new search.
-  var LISTS = { results: 'list', subs: 'subs', later: 'later', channel: 'channel', playlist: 'plist' };
+  var LISTS = { results: 'list', subs: 'subs', later: 'later', history: 'history', channel: 'channel', playlist: 'plist' };
   var depth = 0;
   var searches = {};
   function record(view, v) {
-    var s = { view: view, query: query, from: from, v: v || null, ch: curChan, tab: curTab, pl: curPl, sh: curShow };
+    var s = { view: view, query: query, f: filters, from: from, v: v || null, ch: curChan, tab: curTab, pl: curPl, sh: curShow };
     var was = history.state;
-    var same = was && was.view === view && view !== 'watch' && was.query === query &&
+    var same = was && was.view === view && view !== 'watch' && was.query === query && fkey(was.f) === fkey(filters) &&
       was.ch === curChan && (was.pl && was.pl.id) === (curPl && curPl.id) &&
       (was.sh && was.sh.feed) === (curShow && curShow.feed);
     try {
@@ -635,13 +713,15 @@
     if (listening) listening.stop();
     $('q').blur();
     var list = s.view === 'watch' ? s.from : s.view;
-    if (list === 'results' && s.query !== query) restoreSearch(s.query);
+    if (list === 'results' && (s.query !== query || fkey(s.f) !== fkey(filters))) { filters = s.f || {}; restoreSearch(s.query); }
+    if (list === 'history') drawHistory();
     if (list === 'channel' && s.ch && (s.ch !== curChan || s.tab !== curTab)) openChannel(s.ch, s.tab, { quiet: true });
     if (list === 'playlist' && s.pl && (!curPl || s.pl.id !== curPl.id)) openPlaylist(s.pl, { quiet: true });
     if (list === 'show' && s.sh && (!curShow || s.sh.feed !== curShow.feed)) openShow(s.sh, { quiet: true });
     if (s.view === 'watch' && s.v) {
       from = s.from;
-      play(s.v, { pop: true });
+      if (playing && playing.id === s.v.id) show('watch', { pop: true, v: s.v });
+      else play(s.v, { pop: true });
     } else {
       show(s.view === 'watch' ? 'home' : s.view, { pop: true });
     }
@@ -653,7 +733,9 @@
     $('q').value = query;
     $('grid').innerHTML = '';
     note('');
-    var hit = searches[query];
+    drawFilters();
+    var hit = searches[skey()];
+    drawChannelCard(hit && hit.channel);
     if (!query) return;
     if (!hit) { run(true); return; }
     hit.items.forEach(function (v) { addCard(v, 'grid'); });
@@ -700,10 +782,11 @@
   }
 
   function run(fresh) {
-    if (busy || !query) return;
+    if ((busy && !fresh) || !query) return;
     busy = true;
-    var q = query;
-    if (fresh) { $('grid').innerHTML = ''; next = null; }
+    var q = query, k = skey();
+    if (fresh) { $('grid').innerHTML = ''; next = null; drawChannelCard(null); }
+    drawFilters();
     $('more').hidden = true;
     note('');
     skeleton('grid', fresh ? 4 : 2);
@@ -712,10 +795,12 @@
         busy = false;
         unskeleton('grid');
         if (fresh && res.items.length) remember(q);
-        var hit = fresh || !searches[q] ? (searches[q] = { items: [] }) : searches[q];
+        var hit = fresh || !searches[k] ? (searches[k] = { items: [] }) : searches[k];
         hit.items = hit.items.concat(res.items);
         hit.next = res.next;
-        if (q !== query) return;
+        if (fresh) hit.channel = res.channel || null;
+        if (k !== skey()) return;
+        if (fresh) drawChannelCard(hit.channel);
         res.items.forEach(function (v) { addCard(v, 'grid'); });
         next = res.next;
         $('more').hidden = !next;
@@ -726,7 +811,68 @@
         unskeleton('grid');
         note('Something went wrong. Try again.');
       })
-      .search(query, fresh ? null : next);
+      .search(query, fresh ? null : next, filters);
+  }
+
+  // Search filters, like the app's: upload date, duration, sort. Kept per search.
+  var filters = {};
+  function fkey(f) { f = f || {}; return [f.date || '', f.dur || '', f.sort || ''].join(','); }
+  function skey() { return query + '\u0001' + fkey(filters); }
+  function drawFilters() {
+    var n = ['date', 'dur', 'sort'].filter(function (k) { return filters[k]; }).length;
+    $('fcount').textContent = n ? 'Filters · ' + n : 'Filters';
+    $('openFilters').classList.toggle('on', !!n);
+    [].slice.call(document.querySelectorAll('#fsheet .row')).forEach(function (row) {
+      [].slice.call(row.children).forEach(function (b) {
+        b.classList.toggle('on', (filters[row.dataset.f] || '') === b.dataset.v);
+      });
+    });
+  }
+  $('openFilters').onclick = function () { drawFilters(); $('fsheet').hidden = $('sheetBg').hidden = false; };
+  $('fclose').onclick = function () { $('fsheet').hidden = $('sheetBg').hidden = true; };
+  [].slice.call(document.querySelectorAll('#fsheet .row')).forEach(function (row) {
+    row.onclick = function (e) {
+      var b = e.target.closest('.chip');
+      if (!b) return;
+      var f = Object.assign({}, filters);
+      if (b.dataset.v) f[row.dataset.f] = b.dataset.v; else delete f[row.dataset.f];
+      filters = f;
+      $('fsheet').hidden = $('sheetBg').hidden = true;
+      record('results');
+      restoreSearch(query);
+    };
+  });
+
+  // The channel a search names, as a big card on top (the app does the same).
+  function drawChannelCard(c) {
+    var box = $('ccard');
+    box.innerHTML = '';
+    box.hidden = !c;
+    if (!c) return;
+    var card = document.createElement('div');
+    card.className = 'ccard';
+    var img = document.createElement('img');
+    img.alt = '';
+    if (c.avatar) img.src = c.avatar;
+    var txt = document.createElement('div');
+    var name = document.createElement('div');
+    name.className = 'cname';
+    name.textContent = decode(c.title);
+    var sub = document.createElement('div');
+    sub.className = 'sub';
+    sub.textContent = [c.handle, c.subscribers === null ? '' : short(c.subscribers) + ' subscribers'].filter(Boolean).join(' · ');
+    txt.appendChild(name);
+    txt.appendChild(sub);
+    if (c.subscribed) {
+      var b = document.createElement('div');
+      b.className = 'sub';
+      b.textContent = 'Subscribed';
+      txt.appendChild(b);
+    }
+    card.appendChild(img);
+    card.appendChild(txt);
+    card.onclick = function () { openChannel(c.id); };
+    box.appendChild(card);
   }
 
   function addCard(v, gridId) {
@@ -737,8 +883,18 @@
     var img = document.createElement('img');
     img.className = 'thumb';
     img.loading = 'lazy';
-    img.src = v.thumb;
+    // YouTube's API hands out 480-wide letterboxed thumbnails, soft on an iPhone screen;
+    // the 1280-wide 16:9 one exists for nearly every video, so try it first.
+    img.src = /^[\w-]{11}$/.test(v.id) ? 'https://i.ytimg.com/vi/' + v.id + '/hq720.jpg' : v.thumb;
+    img.onerror = function () { img.onerror = null; img.src = v.thumb; };
     tw.appendChild(img);
+    var h = histMap()[v.id];
+    if (h && h.d && h.t > 10) {
+      var prog = document.createElement('div');
+      prog.className = 'prog';
+      prog.innerHTML = '<i style="width:' + Math.min(100, Math.max(3, h.t / h.d * 100)).toFixed(1) + '%"></i>';
+      tw.appendChild(prog);
+    }
     if (v.seconds) {
       var dur = document.createElement('span');
       dur.className = 'dur';
@@ -893,8 +1049,16 @@
   var playing = null;
   function play(v, opts) {
     $('audio').pause();
-    show('watch', { pop: opts && opts.pop, v: v });
+    if (playing && playing.id === v.id && $('player').querySelector('iframe')) {
+      show('watch', { pop: opts && opts.pop, v: v });
+      return;
+    }
     playing = v;
+    show('watch', { pop: opts && opts.pop, v: v });
+    yt = { t: 0, d: v.seconds || 0, state: -1, heard: false };
+    var past = histMap()[v.id];
+    var start = past && past.d && past.t > 15 && past.t < past.d - 20 ? Math.floor(past.t) : 0;
+    addHistory(v, past ? past.t : 0, past ? past.d : v.seconds || 0);
     var channel = decode(v.channel);
     $('wtitle').textContent = decode(v.title);
     $('wsub').textContent = [views(v.views), ago(v.published)].filter(Boolean).join('  ');
@@ -904,8 +1068,12 @@
     $('wmore').hidden = $('desc').hidden = true;
     closeTx();
     drawSave();
+    $('vtitle').textContent = decode(v.title);
+    $('vchan').textContent = channel;
     $('player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + v.id +
-      '?playsinline=1&rel=0&autoplay=1&enablejsapi=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+      '?playsinline=1&rel=0&autoplay=1&enablejsapi=1' + (start ? '&start=' + start : '') +
+      '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+    listen($('player').querySelector('iframe'));
     api()
       .withSuccessHandler(function (d) {
         if (!d || playing !== v) return;
@@ -920,6 +1088,8 @@
   // Description drop-down: likes, views and date on top, then the text with its
   // timestamps tappable, then chapters when the description lists them.
   var TS = /(?:(\d{1,2}):)?(\d{1,2}):(\d{2})/g;
+  // Links open in a new tab; timestamps jump the player.
+  var LINKISH = /(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]])|(#[A-Za-z0-9_]*[A-Za-z][A-Za-z0-9_]*)|(?:\d{1,2}:)?\d{1,2}:\d{2}/g;
   function secs(m) { return (Number(m[1]) || 0) * 3600 + Number(m[2]) * 60 + Number(m[3]); }
 
   function drawDetails(d) {
@@ -945,11 +1115,24 @@
     var box = $('dtext');
     box.innerHTML = '';
     var last = 0, m;
-    TS.lastIndex = 0;
-    while ((m = TS.exec(text))) {
+    LINKISH.lastIndex = 0;
+    while ((m = LINKISH.exec(text))) {
       box.appendChild(document.createTextNode(text.slice(last, m.index)));
-      box.appendChild(stamp(m[0], secs(m)));
-      last = TS.lastIndex;
+      if (m[1]) {
+        var a = document.createElement('a');
+        a.className = 'ts';
+        a.href = m[1];
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = m[1];
+        box.appendChild(a);
+      } else if (m[2]) {
+        box.appendChild(tag(m[2]));
+      } else {
+        TS.lastIndex = 0;
+        box.appendChild(stamp(m[0], secs(TS.exec(m[0]))));
+      }
+      last = LINKISH.lastIndex;
     }
     box.appendChild(document.createTextNode(text.slice(last)));
 
@@ -981,6 +1164,14 @@
     });
   }
 
+  function tag(label) {
+    var a = document.createElement('span');
+    a.className = 'ts';
+    a.textContent = label;
+    a.onclick = function () { $('q').value = label; $('form').requestSubmit(); };
+    return a;
+  }
+
   function stamp(label, t) {
     var a = document.createElement('span');
     a.className = 'ts';
@@ -988,6 +1179,102 @@
     a.onclick = function () { seek(t); };
     return a;
   }
+
+  // The embed reports its time and state once told someone is listening (the same
+  // handshake YouTube's own iframe API makes). That drives the mini player, the
+  // watched-part bars and resume.
+  var yt = { t: 0, d: 0, state: -1, heard: false };
+  function listen(f) {
+    var tries = 0;
+    var hello = function () {
+      if (!f.isConnected || yt.heard || tries++ > 20) return;
+      f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*');
+      setTimeout(hello, 500);
+    };
+    f.addEventListener('load', hello);
+  }
+  var lastSave = 0;
+  window.addEventListener('message', function (e) {
+    if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin) || !playing) return;
+    var f = $('player').querySelector('iframe');
+    if (!f || e.source !== f.contentWindow) return;
+    var d;
+    try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch (err) { return; }
+    if (!d || !d.event) return;
+    yt.heard = true;
+    var info = d.info;
+    if (d.event === 'onStateChange' && typeof info === 'number') yt.state = info;
+    if (info && typeof info === 'object') {
+      if (typeof info.playerState === 'number') yt.state = info.playerState;
+      if (typeof info.currentTime === 'number') yt.t = info.currentTime;
+      if (typeof info.duration === 'number' && info.duration > 0) yt.d = info.duration;
+    }
+    $('vppIcon').setAttribute('href', yt.state === 1 || yt.state === 3 ? '#i-pause' : '#i-play');
+    $('vbar').style.width = yt.d ? Math.min(100, yt.t / yt.d * 100) + '%' : '0';
+    var now = Date.now();
+    if (yt.t > 0 && (now - lastSave > 5000 || yt.state === 0 || yt.state === 2)) {
+      lastSave = now;
+      addHistory(playing, yt.state === 0 ? yt.d : yt.t, yt.d);
+    }
+  });
+  function command(func, args) {
+    var f = $('player').querySelector('iframe');
+    if (f) f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: args || [] }), '*');
+  }
+  function closeVideo() {
+    if (!playing) return;
+    if (yt.t > 0) addHistory(playing, yt.t, yt.d);
+    $('player').innerHTML = '';
+    playing = null;
+    $('watch').hidden = true;
+    $('watch').classList.remove('mini');
+    if (nowEp && current !== 'player') $('mini').hidden = false;
+  }
+  $('watch').onclick = function (e) {
+    if (!$('watch').classList.contains('mini') || e.target.closest('button')) return;
+    show('watch', { v: playing });
+  };
+  $('vpp').onclick = function () { command(yt.state === 1 || yt.state === 3 ? 'pauseVideo' : 'playVideo'); };
+  $('vclose').onclick = function () { closeVideo(); };
+
+  // Watch history: on this phone only, newest first, 200 at most, with how far in.
+  var histCache = null;
+  function getHist() {
+    if (!histCache) { try { histCache = JSON.parse(localStorage.getItem('hist') || '[]'); } catch (e) { histCache = []; } }
+    return histCache;
+  }
+  function histMap() {
+    var m = {};
+    getHist().forEach(function (h) { m[h.v.id] = h; });
+    return m;
+  }
+  function addHistory(v, t, d) {
+    var card = { id: v.id, title: v.title, channel: v.channel, published: v.published, thumb: v.thumb,
+                 seconds: v.seconds, views: v.views, avatar: v.avatar, channelId: v.channelId };
+    histCache = [{ v: card, t: Math.floor(t || 0), d: Math.floor(d || 0), at: Date.now() }]
+      .concat(getHist().filter(function (h) { return h.v.id !== v.id; })).slice(0, 200);
+    try { localStorage.setItem('hist', JSON.stringify(histCache)); } catch (e) {}
+  }
+  function drawHistory() {
+    $('hgrid').innerHTML = '';
+    var list = getHist();
+    list.forEach(function (h) { addCard(h.v, 'hgrid'); });
+    $('hnote').hidden = !!list.length;
+    $('clearHist').hidden = !list.length;
+  }
+  function drawHistRow() {
+    var list = getHist().slice(0, 12);
+    $('hrow').innerHTML = '';
+    list.forEach(function (h) { addCard(h.v, 'hrow'); });
+    $('histRow').hidden = !list.length;
+  }
+  $('openHist').onclick = function () { drawHistory(); show('history'); };
+  $('clearHist').onclick = function () {
+    if (!confirm('Clear all watch history on this phone?')) return;
+    histCache = [];
+    try { localStorage.removeItem('hist'); } catch (e) {}
+    drawHistory();
+  };
 
   // The embed takes commands by message when it is loaded with enablejsapi=1.
   function seek(t) {
@@ -998,7 +1285,6 @@
     };
     send('seekTo', [t, true]);
     send('playVideo', []);
-    scroller.scrollTop = 0;
   }
 
   function toggleDesc(open) {
@@ -1128,10 +1414,12 @@
   function openChannel(id, tab, opts) {
     opts = opts || {};
     var fresh = curChan !== id;
+    if (fresh) curSort = 'latest';
     curChan = id;
     curTab = tab || 'videos';
     if (!opts.quiet) show('channel', opts);
     var c = chans[id] || (chans[id] = { head: null, videos: { items: [], next: null, done: false },
+                                        popular: { items: [], next: null, done: false },
                                         playlists: { items: [], next: null, done: false } });
     if (fresh) drawChannelHead(c.head);
     if (!c.head) {
@@ -1156,17 +1444,27 @@
     $('csub').hidden = !(h && h.subscribed);
   }
 
+  // Videos tab sorts Latest or Popular, like the app; Playlists has no sort.
+  var curSort = 'latest';
+  function tabPage() {
+    var c = chans[curChan];
+    return curTab === 'playlists' ? c.playlists : curSort === 'popular' ? c.popular : c.videos;
+  }
   function drawTab() {
     $('tabVideos').classList.toggle('on', curTab === 'videos');
     $('tabLists').classList.toggle('on', curTab === 'playlists');
-    var page = chans[curChan][curTab];
+    $('sorts').hidden = curTab !== 'videos';
+    $('sortLatest').classList.toggle('on', curSort !== 'popular');
+    $('sortPopular').classList.toggle('on', curSort === 'popular');
+    var page = tabPage();
     $('cgrid').innerHTML = '';
     page.items.forEach(function (it) { curTab === 'videos' ? addCard(it, 'cgrid') : addList(it, 'cgrid'); });
     $('cmore').hidden = !page.next;
     $('cnote').hidden = true;
-    if (!page.done) loadMore(page, curTab === 'videos' ? 'channelVideos' : 'channelPlaylists', curChan, 'cgrid', 'cnote', 'cmore',
-      curTab === 'videos' ? addCard : addList, function () { return chans[curChan] && chans[curChan][curTab] === page; });
+    if (!page.done) drawTabMore();
   }
+  $('sortLatest').onclick = function () { if (curSort !== 'latest') { curSort = 'latest'; drawTab(); } };
+  $('sortPopular').onclick = function () { if (curSort !== 'popular') { curSort = 'popular'; drawTab(); } };
 
   function openPlaylist(p, opts) {
     opts = opts || {};
@@ -1185,7 +1483,7 @@
 
   // One more page of a channel tab or playlist. "still" says whether the page on
   // screen is still the one asked for.
-  function loadMore(page, fn, id, gridId, noteId, moreId, draw, still) {
+  function loadMore(page, fn, id, gridId, noteId, moreId, draw, still, extra) {
     if (page.busy || (page.done && !page.next)) return;
     page.busy = true;
     $(moreId).hidden = true;
@@ -1209,7 +1507,7 @@
         unskeleton(gridId);
         $(noteId).textContent = 'Something went wrong. Try again.';
         $(noteId).hidden = false;
-      })[fn](id, page.next);
+      })[fn](id, page.next, extra);
   }
 
   function addList(p, gridId) {
@@ -1248,6 +1546,7 @@
   // Your own playlists on the You tab, with Liked videos first. Loaded once.
   var mine = { items: [], next: null, done: false };
   function openYou() {
+    drawHistRow();
     show('you');
     if (mine.done) return;
     if (!$('mgrid').querySelector('.card')) addList({ id: 'liked', title: 'Liked videos', thumb: '', count: '' }, 'mgrid');
@@ -1287,13 +1586,15 @@
   function forget(q) {
     try { localStorage.setItem('recent', JSON.stringify(getRecent().filter(function (x) { return x !== q; }))); } catch (e) {}
   }
+  var recentOn = false;
   function recent(on) {
     var box = $('recent');
-    if (!on) { box.hidden = true; return; }
+    recentOn = on;
+    if (!on) { box.hidden = true; clearTimeout(sugTimer); return; }
     var typed = $('q').value.trim().toLowerCase();
     var list = getRecent().filter(function (x) { return !typed || x.toLowerCase().indexOf(typed) !== -1; });
     box.innerHTML = '';
-    list.forEach(function (x) {
+    list.slice(0, typed ? 3 : 20).forEach(function (x) {
       var row = document.createElement('div');
       row.className = 'rec';
       row.innerHTML = '<svg><use href="#i-history"/></svg><span></span>' +
@@ -1303,7 +1604,45 @@
       row.querySelector('button').onclick = function (e) { e.stopPropagation(); forget(x); recent(true); };
       box.appendChild(row);
     });
-    box.hidden = !list.length;
+    box.hidden = !box.children.length;
+    if (typed) suggestSoon(typed, list);
+  }
+
+  // What YouTube would suggest while typing, blocked words already dropped by the server.
+  var sugTimer = null, sugCache = {};
+  function suggestSoon(typed, have) {
+    clearTimeout(sugTimer);
+    var draw = function (words) {
+      if (!recentOn || $('q').value.trim().toLowerCase() !== typed) return;
+      var box = $('recent');
+      var seen = {};
+      have.forEach(function (x) { seen[x.toLowerCase()] = 1; });
+      words.forEach(function (w) {
+        if (seen[w.toLowerCase()]) return;
+        var row = document.createElement('div');
+        row.className = 'rec';
+        row.innerHTML = '<svg><use href="#i-search"/></svg><span></span>' +
+          '<button class="icon" aria-label="Fill in"><svg><use href="#i-fill"/></svg></button>';
+        row.querySelector('span').textContent = w;
+        row.onclick = function () { $('q').value = w; $('form').requestSubmit(); };
+        row.querySelector('button').onclick = function (e) {
+          e.stopPropagation();
+          $('q').value = w + ' ';
+          $('q').focus();
+          recent(true);
+        };
+        box.appendChild(row);
+      });
+      box.hidden = !box.children.length;
+    };
+    if (sugCache[typed]) { draw(sugCache[typed]); return; }
+    sugTimer = setTimeout(function () {
+      var call = api();
+      call.withSuccessHandler(function (words) {
+        sugCache[typed] = words || [];
+        draw(sugCache[typed]);
+      }).withFailureHandler(function () {}).suggest(typed);
+    }, 150);
   }
 
   var toastTimer = null;
@@ -1321,6 +1660,7 @@
     recent(false);
     if (!q) return;
     query = q;
+    filters = {};
     $('q').blur();
     show('results');
     run(true);
@@ -1356,10 +1696,11 @@
     loadMore(page, 'playlist', id, 'pgrid', 'pnote', 'pmore', addCard, function () { return curPl && curPl.id === id; });
   };
   function drawTabMore() {
-    var page = chans[curChan][curTab];
+    var page = tabPage();
     var tab = curTab;
     loadMore(page, tab === 'videos' ? 'channelVideos' : 'channelPlaylists', curChan, 'cgrid', 'cnote', 'cmore',
-      tab === 'videos' ? addCard : addList, function () { return chans[curChan] && chans[curChan][curTab] === page; });
+      tab === 'videos' ? addCard : addList, function () { return chans[curChan] && tabPage() === page; },
+      tab === 'videos' && curSort === 'popular' ? 'popular' : undefined);
   }
   $('q').addEventListener('focus', function () { recent(true); });
   $('q').addEventListener('input', function () { recent(true); });
@@ -1403,7 +1744,7 @@
     $('sheet').hidden = $('sheetBg').hidden = false;
   }
   function closeSheet() { $('sheet').hidden = $('sheetBg').hidden = true; }
-  $('sheetBg').onclick = closeSheet;
+  $('sheetBg').onclick = function () { closeSheet(); $('fsheet').hidden = true; };
   $('sheetLater').onclick = function () { closeSheet(); toggleLater(sheetFor); };
   $('sheetShare').onclick = function () { closeSheet(); shareVideo(sheetFor); };
   $('openLater').onclick = function () { drawLater(); show('later'); };
@@ -1686,8 +2027,7 @@
     nowEp = ep;
     nowShow = sh;
     keep('now', { ep: ep, show: sh });
-    var f = $('player').querySelector('iframe');
-    if (f) f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
+    closeVideo();
     var start = function (src) {
       a.src = src;
       a.playbackRate = store('rate', 1);
