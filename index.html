@@ -129,7 +129,7 @@
   .stats b { display: block; font-size: 18px; }
   .stats span { color: var(--muted); font-size: 12px; }
   .dtext { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .ts { color: var(--link); cursor: pointer; }
+  .ts { color: var(--link); cursor: pointer; text-decoration: none; word-break: break-all; }
   .chapters { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
   .chapters h3 { font-size: 16px; margin: 4px 0; }
   .chap { display: flex; gap: 12px; width: 100%; border: 0; background: none; padding: 8px 0; text-align: left; cursor: pointer; }
@@ -737,7 +737,10 @@
     var img = document.createElement('img');
     img.className = 'thumb';
     img.loading = 'lazy';
-    img.src = v.thumb;
+    // YouTube's API hands out 480-wide letterboxed thumbnails, soft on an iPhone screen;
+    // the 1280-wide 16:9 one exists for nearly every video, so try it first.
+    img.src = /^[\w-]{11}$/.test(v.id) ? 'https://i.ytimg.com/vi/' + v.id + '/hq720.jpg' : v.thumb;
+    img.onerror = function () { img.onerror = null; img.src = v.thumb; };
     tw.appendChild(img);
     if (v.seconds) {
       var dur = document.createElement('span');
@@ -920,6 +923,8 @@
   // Description drop-down: likes, views and date on top, then the text with its
   // timestamps tappable, then chapters when the description lists them.
   var TS = /(?:(\d{1,2}):)?(\d{1,2}):(\d{2})/g;
+  // Links open in a new tab; timestamps jump the player.
+  var LINKISH = /(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]])|(?:\d{1,2}:)?\d{1,2}:\d{2}/g;
   function secs(m) { return (Number(m[1]) || 0) * 3600 + Number(m[2]) * 60 + Number(m[3]); }
 
   function drawDetails(d) {
@@ -945,11 +950,22 @@
     var box = $('dtext');
     box.innerHTML = '';
     var last = 0, m;
-    TS.lastIndex = 0;
-    while ((m = TS.exec(text))) {
+    LINKISH.lastIndex = 0;
+    while ((m = LINKISH.exec(text))) {
       box.appendChild(document.createTextNode(text.slice(last, m.index)));
-      box.appendChild(stamp(m[0], secs(m)));
-      last = TS.lastIndex;
+      if (m[1]) {
+        var a = document.createElement('a');
+        a.className = 'ts';
+        a.href = m[1];
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = m[1];
+        box.appendChild(a);
+      } else {
+        TS.lastIndex = 0;
+        box.appendChild(stamp(m[0], secs(TS.exec(m[0]))));
+      }
+      last = LINKISH.lastIndex;
     }
     box.appendChild(document.createTextNode(text.slice(last)));
 
