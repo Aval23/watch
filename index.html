@@ -199,7 +199,13 @@
            text-align: left; cursor: pointer; color: var(--muted); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
   .cdesc.short { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }
   .csub { padding: 8px 12px; }
-  .csub .subbed { display: block; text-align: center; margin: 0; }
+  .csub .subbed { display: block; width: 100%; text-align: center; margin: 0; }
+  button.subbed { border: 0; cursor: pointer; }
+  .subbed.no { background: var(--fg); color: var(--bg); }
+  /* Pull down on Subscriptions to refresh */
+  #ptr { height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--muted);
+         font-size: 13px; transition: height .2s; }
+  #ptr.pull { transition: none; }
   .tabs { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 12px; position: sticky;
           top: 0; background: var(--bg); z-index: 2; }
   .tabs button { flex: 1; max-width: 140px; border: 0; background: none; height: 48px; font-size: 14px; font-weight: 500;
@@ -384,7 +390,7 @@
       <div class="chapters" id="chapters" hidden></div>
       <button class="less" id="less">Show less</button>
     </div>
-    <div class="chan" id="wchanRow"><img class="av" id="wav" alt=""><span id="wchan"></span><span class="subbed" id="wsubbed" hidden>Subscribed</span></div>
+    <div class="chan" id="wchanRow"><img class="av" id="wav" alt=""><span id="wchan"></span><button class="subbed" id="wsubbed" hidden>Subscribed</button></div>
     <div class="actions">
       <button class="act" id="shareBtn"><svg><use href="#i-share"/></svg>Share</button>
       <button class="act" id="saveBtn"><svg><use id="saveIcon" href="#i-save"/></svg><span id="saveLabel">Save</span></button>
@@ -407,6 +413,7 @@
   </section>
 
   <section id="subs" hidden>
+    <div id="ptr"></div>
     <div class="chans" id="chans"></div>
     <div class="grid" id="sgrid"></div>
     <p class="note" id="snote" hidden></p>
@@ -419,7 +426,7 @@
       <div><div class="cname" id="cname"></div><div class="sub" id="cstats"></div></div>
     </div>
     <button class="cdesc short" id="cdesc"></button>
-    <div class="csub" id="csub" hidden><span class="subbed">Subscribed</span></div>
+    <div class="csub" id="csub" hidden><button class="subbed" id="csubBtn">Subscribed</button></div>
     <div class="tabs">
       <button id="tabVideos" class="on">Videos</button>
       <button id="tabLists">Playlists</button>
@@ -987,21 +994,91 @@
     });
   }
 
-  function loadFeed() {
-    $('sgrid').innerHTML = '';
-    if (!chanList.length) { snote('No subscriptions yet.'); return; }
+  function loadFeed(fresh, done) {
+    done = done || function () {};
+    if (!fresh) $('sgrid').innerHTML = '';
+    if (!chanList.length) { $('sgrid').innerHTML = ''; snote('No subscriptions yet.'); done(); return; }
     var want = chanPick;
-    if (feeds[want || '']) { drawFeed(feeds[want || '']); return; }
+    if (feeds[want || '']) { drawFeed(feeds[want || '']); done(); return; }
     snote('');
-    skeleton('sgrid', 4);
+    if (!fresh) skeleton('sgrid', 4);
     api()
       .withSuccessHandler(function (res) {
+        done();
         feeds[want || ''] = res.items;
         if (want === chanPick) drawFeed(res.items);
       })
-      .withFailureHandler(function () { unskeleton('sgrid'); snote('Something went wrong. Try again.'); })
-      .subscriptionFeed(want);
+      .withFailureHandler(function () { done(); unskeleton('sgrid'); snote('Something went wrong. Try again.'); })
+      .subscriptionFeed(want, !!fresh);
   }
+
+  // Subscribe / Subscribed, like the app: white when you aren't, grey when you are;
+  // unsubscribing asks first. The phone's channel list updates straight away.
+  function isSubbed(id, fallback) {
+    return chanList ? chanList.some(function (c) { return c.id === id; }) : !!fallback;
+  }
+  function drawSubBtn(b, id, on) {
+    if (on === null || !id) { b.hidden = !on; b.textContent = 'Subscribed'; b.classList.remove('no'); return; }
+    b.dataset.ch = id;
+    b.dataset.on = on ? '1' : '';
+    b.textContent = on ? 'Subscribed' : 'Subscribe';
+    b.classList.toggle('no', !on);
+    b.hidden = false;
+  }
+  function toggleSub(b, name) {
+    var id = b.dataset.ch;
+    if (!id || b.disabled) return;
+    var on = !b.dataset.on;
+    if (!on && !confirm('Unsubscribe from ' + (name || 'this channel') + '?')) return;
+    b.disabled = true;
+    api()
+      .withSuccessHandler(function (r) {
+        b.disabled = false;
+        if (!r || !r.ok) { toast('Couldn\u2019t change that'); return; }
+        if (chanList) {
+          chanList = chanList.filter(function (c) { return c.id !== id; });
+          if (r.subscribed && r.row) chanList.unshift(r.row);
+          feeds = {};
+          if (chanPick === id && !r.subscribed) chanPick = null;
+          drawChans();
+          if (current === 'subs') loadFeed();
+        }
+        if (chans[id] && chans[id].head) chans[id].head.subscribed = r.subscribed;
+        [$('wsubbed'), $('csubBtn')].forEach(function (x) { if (x.dataset.ch === id) drawSubBtn(x, id, r.subscribed); });
+        toast(r.subscribed ? 'Subscribed' : 'Unsubscribed');
+      })
+      .withFailureHandler(function () { b.disabled = false; toast('Couldn\u2019t change that. Try again.'); })
+      .subscribe(id, on);
+  }
+
+  // Pull down at the top of Subscriptions for the newest uploads.
+  (function () {
+    var y0 = null, dy = 0, ptr = $('ptr');
+    scroller.addEventListener('touchstart', function (e) {
+      y0 = current === 'subs' && scroller.scrollTop <= 0 && chanList ? e.touches[0].clientY : null;
+      dy = 0;
+    }, { passive: true });
+    scroller.addEventListener('touchmove', function (e) {
+      if (y0 === null) return;
+      dy = e.touches[0].clientY - y0;
+      if (dy <= 0) { ptr.style.height = '0'; return; }
+      ptr.classList.add('pull');
+      ptr.style.height = Math.min(64, dy / 2) + 'px';
+      ptr.textContent = dy > 120 ? 'Release to refresh' : 'Pull to refresh';
+    }, { passive: true });
+    scroller.addEventListener('touchend', function () {
+      if (y0 === null) return;
+      y0 = null;
+      ptr.classList.remove('pull');
+      if (dy > 120) {
+        ptr.textContent = 'Refreshing…';
+        delete feeds[chanPick || ''];
+        loadFeed(true, function () { ptr.style.height = '0'; });
+      } else {
+        ptr.style.height = '0';
+      }
+    }, { passive: true });
+  })();
 
   function drawFeed(items) {
     $('sgrid').innerHTML = '';
@@ -1064,7 +1141,7 @@
     $('wsub').textContent = [views(v.views), ago(v.published)].filter(Boolean).join('  ');
     $('wchan').textContent = channel;
     if (v.avatar) $('wav').src = v.avatar; else $('wav').removeAttribute('src');
-    $('wsubbed').hidden = !(chanList && chanList.some(function (c) { return c.title === channel; }));
+    drawSubBtn($('wsubbed'), v.channelId, chanList ? chanList.some(function (c) { return c.id === v.channelId || c.title === channel; }) : null);
     $('wmore').hidden = $('desc').hidden = true;
     closeTx();
     drawSave();
@@ -1077,8 +1154,8 @@
     api()
       .withSuccessHandler(function (d) {
         if (!d || playing !== v) return;
-        if (d.subscribed) $('wsubbed').hidden = false;
         if (!v.channelId) v.channelId = d.channelId;
+        drawSubBtn($('wsubbed'), v.channelId, !!d.subscribed);
         drawDetails(d);
         $('wmore').hidden = false;
       })
@@ -1328,16 +1405,16 @@
         } else if (r && r.status === 'working') {
           txTimer = setTimeout(function () { txAsk('transcriptCheck', [r.job, v.id], v); }, 5000);
         } else {
-          txWait(r && TX_MSG[r.status] ? r.status : 'failed');
+          txWait(r && TX_MSG[r.status] ? r.status : 'failed', r && r.why);
         }
       })
-      .withFailureHandler(function () { if (txFor === v.id) txWait('failed'); });
+      .withFailureHandler(function (e) { if (txFor === v.id) txWait('failed', e && e.message); });
     call[fn].apply(null, args);
   }
-  function txWait(state) {
+  function txWait(state, why) {
     txState = state;
     $('txCopy').hidden = true;
-    $('txtext').textContent = TX_MSG[state];
+    $('txtext').textContent = TX_MSG[state] + (state === 'failed' && why ? '\n\nWhat came back: ' + why : '');
   }
   // Same tappable timestamps as the description.
   function drawTx(text) {
@@ -1441,7 +1518,8 @@
     $('cdesc').textContent = h ? h.description : '';
     $('cdesc').hidden = !(h && h.description);
     $('cdesc').classList.add('short');
-    $('csub').hidden = !(h && h.subscribed);
+    $('csub').hidden = !h;
+    if (h) drawSubBtn($('csubBtn'), h.id, isSubbed(h.id, h.subscribed));
   }
 
   // Videos tab sorts Latest or Popular, like the app; Playlists has no sort.
@@ -1685,6 +1763,11 @@
   $('wtop').onclick = function () { toggleDesc($('desc').hidden); };
   $('wchanRow').onclick = function (e) {
     if (playing && playing.channelId && e.target !== $('wsubbed')) openChannel(playing.channelId);
+  };
+  $('wsubbed').onclick = function (e) { e.stopPropagation(); toggleSub($('wsubbed'), decode(playing ? playing.channel : '')); };
+  $('csubBtn').onclick = function () {
+    var c = chans[curChan];
+    toggleSub($('csubBtn'), c && c.head ? decode(c.head.title) : '');
   };
   $('cdesc').onclick = function () { $('cdesc').classList.toggle('short'); };
   $('tabVideos').onclick = function () { if (curTab !== 'videos') { curTab = 'videos'; drawTab(); record('channel'); } };
