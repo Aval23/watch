@@ -1252,6 +1252,12 @@
     var past = histMap()[v.id];
     var start = past && past.d && past.t > 15 && past.t < past.d - 20 ? Math.floor(past.t) : 0;
     addHistory(v, past ? past.t : 0, past ? past.d : v.seconds || 0);
+    drawWatch(v);
+    embed(v, start);
+  }
+
+  // Title, channel, buttons and description for the video now playing.
+  function drawWatch(v) {
     var channel = decode(v.channel);
     $('wtitle').textContent = decode(v.title);
     $('wsub').textContent = [views(v.views), ago(v.published)].filter(Boolean).join('  ');
@@ -1263,7 +1269,6 @@
     drawSave();
     $('vtitle').textContent = decode(v.title);
     $('vchan').textContent = channel;
-    embed(v, start);
     api()
       .withSuccessHandler(function (d) {
         if (!d || playing !== v) return;
@@ -1778,11 +1783,25 @@
     }, 300);
   }
   function queueNext(v) { if (queue) { queue.extra.unshift(v); toast('Plays next'); } }
+  // The next video loads into the player that is already playing. A new player
+  // started without a tap stays paused on an iPhone (Safari only lets a tap start
+  // sound), so the next video never began on its own (Alex, 2026-11-03).
+  function playNext(v) {
+    var f = $('player').querySelector('iframe');
+    if (!f || !yt.heard) { play(v, { queued: true }); return; }
+    playing = v;
+    yt = { t: 0, d: v.seconds || 0, state: -1, heard: true };
+    addHistory(v, 0, v.seconds || 0);
+    drawQueue();
+    drawWatch(v);
+    command('loadVideoById', [{ videoId: v.id, startSeconds: 0 }]);
+    if (current === 'watch') record('watch', v);
+  }
   function advance() {
     if (!queue || queue.busy) return;
-    if (queue.extra.length) { play(queue.extra.shift(), { queued: true }); return; }
+    if (queue.extra.length) { playNext(queue.extra.shift()); return; }
     var page = queue.page;
-    if (queue.i + 1 < page.items.length) { queue.i++; play(page.items[queue.i], { queued: true }); return; }
+    if (queue.i + 1 < page.items.length) { queue.i++; playNext(page.items[queue.i]); return; }
     if (!page.next) { queue = null; drawQueue(); return; }
     queue.busy = true;
     var q = queue;
