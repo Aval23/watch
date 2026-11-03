@@ -121,6 +121,9 @@
   .vmini .icon svg { width: 26px; height: 26px; }
   #vbar { position: absolute; left: 0; bottom: 0; height: 2px; background: #f00; width: 0; display: none; }
   .watch.mini #vbar { display: block; }
+  .vretry { display: block; width: 100%; padding: 10px 16px; border: 0; background: var(--field);
+            color: var(--fg); font: inherit; font-size: 14px; text-align: center; cursor: pointer; }
+  .watch.mini .vretry { display: none; }
   nav { order: 2; }
   #mini { order: 1; }
   /* Watched part of a video, under its thumbnail */
@@ -369,6 +372,7 @@
     <button class="icon" id="vclose" aria-label="Close"><svg><use href="#i-x"/></svg></button>
   </div>
   <div id="vbar"></div>
+  <button class="vretry" id="vretry" hidden>Video not loading? Tap to reload</button>
 </section>
 <main>
   <section class="splash" id="splash">
@@ -882,6 +886,24 @@
     box.appendChild(card);
   }
 
+  // A missing size comes back from YouTube as a 120-wide grey placeholder, not an
+  // error, so the old error-only fallback never fired. Walk the sizes in order and
+  // treat the placeholder like a failure; a dropped load gets one retry.
+  function thumbSrc(img, v) {
+    var base = /^[\w-]{11}$/.test(v.id) ? 'https://i.ytimg.com/vi/' + v.id + '/' : '';
+    var list = (base ? [base + 'hq720.jpg'] : []).concat(v.thumb ? [v.thumb] : [])
+      .concat(base ? [base + 'hqdefault.jpg', base + 'mqdefault.jpg'] : [])
+      .filter(function (u, i, a) { return a.indexOf(u) === i; });
+    var i = 0, retried = false;
+    var next = function () {
+      if (++i < list.length) { img.src = list[i]; return; }
+      if (!retried && list.length) { retried = true; i = 0; img.src = list[0] + '?r=1'; }
+    };
+    img.onload = function () { if (img.naturalWidth <= 120 && i < list.length - 1) next(); };
+    img.onerror = next;
+    if (list.length) img.src = list[0];
+  }
+
   function addCard(v, gridId) {
     var card = document.createElement('div');
     card.className = 'card';
@@ -892,8 +914,7 @@
     img.loading = 'lazy';
     // YouTube's API hands out 480-wide letterboxed thumbnails, soft on an iPhone screen;
     // the 1280-wide 16:9 one exists for nearly every video, so try it first.
-    img.src = /^[\w-]{11}$/.test(v.id) ? 'https://i.ytimg.com/vi/' + v.id + '/hq720.jpg' : v.thumb;
-    img.onerror = function () { img.onerror = null; img.src = v.thumb; };
+    thumbSrc(img, v);
     tw.appendChild(img);
     var h = histMap()[v.id];
     if (h && h.d && h.t > 10) {
@@ -1147,10 +1168,7 @@
     drawSave();
     $('vtitle').textContent = decode(v.title);
     $('vchan').textContent = channel;
-    $('player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + v.id +
-      '?playsinline=1&rel=0&autoplay=1&enablejsapi=1' + (start ? '&start=' + start : '') +
-      '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
-    listen($('player').querySelector('iframe'));
+    embed(v, start);
     api()
       .withSuccessHandler(function (d) {
         if (!d || playing !== v) return;
@@ -1261,6 +1279,24 @@
   // handshake YouTube's own iframe API makes). That drives the mini player, the
   // watched-part bars and resume.
   var yt = { t: 0, d: 0, state: -1, heard: false };
+  // A player that has said nothing after 8 seconds never loaded (black or white box):
+  // offer a reload instead of leaving him stuck.
+  var stuckTimer = null;
+  function embed(v, start) {
+    $('vretry').hidden = true;
+    clearTimeout(stuckTimer);
+    yt.heard = false;
+    $('player').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + v.id +
+      '?playsinline=1&rel=0&autoplay=1&enablejsapi=1' + (start ? '&start=' + start : '') +
+      '" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+    listen($('player').querySelector('iframe'));
+    stuckTimer = setTimeout(function () { if (playing === v && !yt.heard) $('vretry').hidden = false; }, 8000);
+  }
+  $('vretry').onclick = function () {
+    if (!playing) return;
+    var h = histMap()[playing.id];
+    embed(playing, h && h.t > 15 ? Math.floor(h.t) : 0);
+  };
   function listen(f) {
     var tries = 0;
     var hello = function () {
@@ -1279,6 +1315,7 @@
     try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch (err) { return; }
     if (!d || !d.event) return;
     yt.heard = true;
+    $('vretry').hidden = true;
     var info = d.info;
     if (d.event === 'onStateChange' && typeof info === 'number') yt.state = info;
     if (info && typeof info === 'object') {
@@ -1302,6 +1339,8 @@
     if (!playing) return;
     if (yt.t > 0) addHistory(playing, yt.t, yt.d);
     $('player').innerHTML = '';
+    clearTimeout(stuckTimer);
+    $('vretry').hidden = true;
     playing = null;
     $('watch').hidden = true;
     $('watch').classList.remove('mini');
